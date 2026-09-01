@@ -47,8 +47,13 @@ export class GeminiProvider implements AIProvider {
       throw new Error("GEMINI_API_KEY is not set");
     }
     this.apiKey = apiKey;
-    this.analysisModel = process.env.GEMINI_ANALYSIS_MODEL || "gemini-2.5-flash";
-    this.imageModel = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+    // Google deprecates/renames model IDs faster than this file gets updated —
+    // override via GEMINI_ANALYSIS_MODEL / GEMINI_IMAGE_MODEL in production
+    // rather than waiting on a code change if these start 404ing again. See
+    // README "Troubleshooting: model 404s" for how to list currently
+    // available models for your key.
+    this.analysisModel = process.env.GEMINI_ANALYSIS_MODEL || "gemini-3.6-flash";
+    this.imageModel = process.env.GEMINI_IMAGE_MODEL || "gemini-3.6-flash-image";
   }
 
   private async callGemini(model: string, body: Record<string, unknown>): Promise<GeminiResponse> {

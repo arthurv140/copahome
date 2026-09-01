@@ -243,6 +243,35 @@ npm run start    # run the production build
 npm run lint     # ESLint
 ```
 
+### Troubleshooting: Gemini model 404s
+
+Google renames/deprecates Gemini model IDs faster than any hardcoded default can keep
+up. If `/api/analyze` or `/api/generate` fails and the server logs (Vercel: Project →
+Logs, or `vercel logs`) show something like:
+
+```
+Gemini API error (404) for model gemini-2.5-flash: ... "no longer available ..."
+```
+
+the fix is a config change, not a code change:
+
+1. List the models your key currently has access to:
+   ```bash
+   curl "https://generativelanguage.googleapis.com/v1beta/models?key=YOUR_GEMINI_API_KEY"
+   ```
+2. Find the current text/vision model (for `GEMINI_ANALYSIS_MODEL`) and the current
+   image-generation/edit model (for `GEMINI_IMAGE_MODEL`) — look for one whose
+   `supportedGenerationMethods` includes `generateContent`, and for the image model,
+   one described as image-output capable.
+3. Set `GEMINI_ANALYSIS_MODEL` and/or `GEMINI_IMAGE_MODEL` in your deployment's
+   environment variables (Vercel: Settings → Environment Variables) to the exact model
+   name from step 2, then redeploy.
+
+The demo-mode amber banner (shown when `AI_PROVIDER` silently fell back to the mock
+provider because the configured provider failed to *initialize*, e.g. no key at all)
+is a different signal from this 404 — a 404 means the key works but the model name is
+stale, so the request fails outright rather than falling back to the mock provider.
+
 ## 9. MVP checklist (brief §21)
 
 - [x] Photo upload (drag & drop, click-to-browse, mobile camera capture)
