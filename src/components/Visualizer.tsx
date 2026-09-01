@@ -129,7 +129,10 @@ export function Visualizer() {
       }
 
       const dataUrl = `data:${data.image.mimeType};base64,${data.image.base64}`;
-      setResults((prev) => ({ ...prev, [curtainType]: { status: "done", imageDataUrl: dataUrl } }));
+      setResults((prev) => ({
+        ...prev,
+        [curtainType]: { status: "done", imageDataUrl: dataUrl, providerNotes: data.providerNotes },
+      }));
     } catch {
       setResults((prev) => ({
         ...prev,

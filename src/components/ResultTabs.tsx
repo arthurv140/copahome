@@ -128,6 +128,12 @@ function CurtainResultPanel({
   if (status === "done" && entry?.imageDataUrl) {
     return (
       <div className="space-y-3">
+        {entry.providerNotes ? (
+          <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span className="font-medium">Demo-modus actief: </span>
+            {entry.providerNotes}
+          </div>
+        ) : null}
         <BeforeAfterSlider originalSrc={originalDataUrl} afterSrc={entry.imageDataUrl} />
         <div className="flex gap-3">
           <button
