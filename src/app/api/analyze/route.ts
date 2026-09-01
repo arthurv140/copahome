@@ -1,0 +1,70 @@
+import { NextResponse } from "next/server";
+import { trackEvent } from "@/lib/analytics";
+import { getAIProvider } from "@/lib/ai/provider";
+import { NoWindowDetectedError } from "@/lib/ai/types";
+import { checkRateLimit, getClientKey } from "@/lib/rateLimit";
+import { ValidationError, validateImagePayload } from "@/lib/validation";
+
+const NO_WINDOW_TIPS = [
+  "Maak de foto recht tegenover het raam.",
+  "Zorg dat het volledige raam zichtbaar is.",
+  "Vermijd extreem donkere foto's.",
+  "Zorg dat het raam niet volledig verborgen is achter meubels.",
+];
+
+export async function POST(request: Request) {
+  const rate = checkRateLimit(`analyze:${getClientKey(request)}`, 30, 10 * 60 * 1000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { error: "Te veel aanvragen. Probeer het over enkele minuten opnieuw." },
+      { status: 429, headers: rate.retryAfterSeconds ? { "Retry-After": String(rate.retryAfterSeconds) } : {} },
+    );
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Ongeldige aanvraag." }, { status: 400 });
+  }
+  const { mimeType: rawMime, imageBase64: rawImage } = (body ?? {}) as Record<string, unknown>;
+
+  let mimeType: string;
+  let imageBase64: string;
+  try {
+    ({ mimeType, imageBase64 } = validateImagePayload(rawMime, rawImage));
+  } catch (err) {
+    if (err instanceof ValidationError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    throw err;
+  }
+
+  trackEvent({ type: "photo_uploaded" });
+
+  try {
+    const provider = getAIProvider();
+    const analysis = await provider.analyzeRoom({ mimeType, imageBase64 });
+    trackEvent({ type: "analysis_completed", windowCount: analysis.windows.length });
+    return NextResponse.json({ analysis });
+  } catch (err) {
+    if (err instanceof NoWindowDetectedError) {
+      trackEvent({ type: "analysis_failed", reason: "no_window_detected" });
+      return NextResponse.json(
+        {
+          error:
+            "We konden het raam op deze foto niet goed herkennen. Probeer een foto waarop het raam duidelijk zichtbaar is.",
+          tips: NO_WINDOW_TIPS,
+        },
+        { status: 422 },
+      );
+    }
+
+    console.error("[/api/analyze]", err);
+    trackEvent({ type: "analysis_failed", reason: "provider_error" });
+    return NextResponse.json(
+      { error: "Er ging iets mis bij het analyseren van de foto. Probeer het opnieuw." },
+      { status: 502 },
+    );
+  }
+}
