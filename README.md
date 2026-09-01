@@ -138,6 +138,15 @@ as a warning) so it always boots — useful for local frontend work, demos, and 
 without needing a paid key. The mock returns the original photo with an on-screen note
 explaining it's demo mode; it never fabricates a fake edit.
 
+**No billing account at all?** `AI_PROVIDER=huggingface` is a fourth, experimental
+option: analysis still runs on Gemini's genuinely free text/vision quota, but
+generation is routed to a free Hugging Face-hosted open model
+(`timbrooks/instruct-pix2pix`) instead of Gemini's or OpenAI's paid image models. No
+card required (`HF_API_TOKEN` from huggingface.co is free). Quality and scene
+preservation are noticeably weaker than the paid providers, and the shared free
+inference API can 503 while a model "warms up" (this provider retries once). Treat it
+as a way to demo a real, if rougher, AI edit at zero cost — not as production-ready.
+
 ## 4. Risks & known limitations (MVP)
 
 - **Prompt-only occlusion is not pixel-perfect.** For simple rooms (visible window,
