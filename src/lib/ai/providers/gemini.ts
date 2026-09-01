@@ -53,7 +53,11 @@ export class GeminiProvider implements AIProvider {
     // README "Troubleshooting: model 404s" for how to list currently
     // available models for your key.
     this.analysisModel = process.env.GEMINI_ANALYSIS_MODEL || "gemini-3.6-flash";
-    this.imageModel = process.env.GEMINI_IMAGE_MODEL || "gemini-3.6-flash-image";
+    // "Nano Banana 2", the current stable Flash-tier image edit model as of
+    // this writing (confirmed via GET /v1beta/models against a live key —
+    // gemini-3.6-flash-image does not exist, despite the text model having
+    // moved to 3.6). Re-check with the same call if this 404s again.
+    this.imageModel = process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
   }
 
   private async callGemini(model: string, body: Record<string, unknown>): Promise<GeminiResponse> {
