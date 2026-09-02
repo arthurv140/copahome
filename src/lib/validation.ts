@@ -1,5 +1,5 @@
-import { getProductById } from "@/lib/treatments";
-import type { Product, TreatmentState, TreatmentTypeId } from "@/types/product";
+import { CURTAIN_FINISHES, CURTAIN_FULLNESS_OPTIONS, getProductById } from "@/lib/treatments";
+import type { CurtainFinish, CurtainFullness, Product, TreatmentState, TreatmentTypeId } from "@/types/product";
 
 export const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 export const ALLOWED_TREATMENT_TYPES: TreatmentTypeId[] = [
@@ -78,4 +78,22 @@ export function validateProductId(value: unknown, treatmentType: TreatmentTypeId
     throw new ValidationError("Invalid fabric choice.");
   }
   return product;
+}
+
+/** Curtain-family only. `value` is optional — undefined when not provided (server falls back to the default). */
+export function validateCurtainFinish(value: unknown): CurtainFinish | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string" || !CURTAIN_FINISHES.includes(value as CurtainFinish)) {
+    throw new ValidationError("Invalid curtain finish.");
+  }
+  return value as CurtainFinish;
+}
+
+/** Curtain-family only. `value` is optional — undefined when not provided (server falls back to the default). */
+export function validateCurtainFullness(value: unknown): CurtainFullness | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "number" || !CURTAIN_FULLNESS_OPTIONS.includes(value as CurtainFullness)) {
+    throw new ValidationError("Invalid curtain fullness.");
+  }
+  return value as CurtainFullness;
 }

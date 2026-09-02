@@ -1,4 +1,4 @@
-import type { Product, TreatmentFamily, TreatmentState, TreatmentTypeId } from "@/types/product";
+import type { CurtainFinish, CurtainFullness, Product, TreatmentFamily, TreatmentState, TreatmentTypeId } from "@/types/product";
 
 /**
  * The product catalog: every purchasable fabric/slat option, modeled as a
@@ -274,4 +274,57 @@ export const TREATMENT_PHYSICAL_PROPERTIES: Record<TreatmentTypeId, Record<Treat
     open:
       "Horizontal wooden venetian blind slats, 63mm wide, tilted open so light and the outside view pass through in wide horizontal bands between the slats, casting a bold striped shadow pattern into the room. The slats remain at full height across the window (not raised up).",
   },
+};
+
+/**
+ * Curtain construction configuration — heading (`CurtainFinish`) and fabric
+ * fullness (`CurtainFullness`). Curtain-family only; wooden blinds have no
+ * heading and don't use this. Deliberately kept as two small, independent,
+ * composable pieces (not one prompt string per finish×fullness combination)
+ * so the AI edit prompt is built dynamically from whichever finish and
+ * fullness the customer picked — see `buildEditPrompt` in `lib/ai/prompts.ts`.
+ */
+export const CURTAIN_FINISHES: CurtainFinish[] = ["single_pleat", "double_pleat", "wave"];
+export const CURTAIN_FULLNESS_OPTIONS: CurtainFullness[] = [1.6, 1.8, 2.0, 2.2];
+export const DEFAULT_CURTAIN_FINISH: CurtainFinish = "double_pleat";
+export const DEFAULT_CURTAIN_FULLNESS: CurtainFullness = 1.8;
+
+export const CURTAIN_FINISH_COPY: Record<CurtainFinish, { label: string; tagline: string }> = {
+  single_pleat: { label: "Single pleat", tagline: "Soft, open, relaxed" },
+  double_pleat: { label: "Double pleat", tagline: "Fuller, structured" },
+  wave: { label: "Wave", tagline: "Continuous S-fold" },
+};
+
+/** Whether this treatment type has a curtain heading (pleats/wave) at all. */
+export function hasCurtainConstruction(type: TreatmentTypeId): boolean {
+  return TREATMENT_COPY[type].family === "curtain";
+}
+
+/**
+ * AI prompt text per heading construction — describes the pleat/wave
+ * architecture itself, independent of fullness (see
+ * `CURTAIN_FULLNESS_PROMPT` below for the density modifier). Written to be
+ * unambiguously distinct from one another so the model can't collapse them
+ * into "a curtain with folds".
+ */
+export const CURTAIN_FINISH_PROMPT: Record<CurtainFinish, string> = {
+  single_pleat:
+    "SINGLE PLEAT heading: a classic single-pleat curtain heading. Each pleat is a single fold of fabric pinched together at the top into a simple, relatively flat pinch, spaced evenly along the heading. Between pleats the fabric hangs in soft, open, relatively wide vertical folds. The overall look is relaxed, soft and airy rather than tightly gathered — an open, breathable fold rhythm from top to bottom, clearly less dense than a double-pleat curtain.",
+  double_pleat:
+    "DOUBLE PLEAT heading: a structured double-pleat curtain heading. Each pleat is formed from two folds of fabric pinched together at the top, creating a fuller, more three-dimensional pleat than a single pleat. This produces a denser, more clearly rhythmic sequence of vertical folds down the length of the curtain, each fold deeper and more defined than a single-pleat curtain. The overall look is fuller, more tailored and more structured — visibly and unambiguously different from the flatter, more open single-pleat curtain.",
+  wave: "WAVE / S-FOLD heading: a wave curtain system on a continuous S-fold heading tape. CRITICAL — this must NOT look like an ordinary curtain with random folds: it must show a continuous, regular, smoothly repeating S-shaped wave pattern running the full width of the curtain, with EVEN spacing between wave crests from the top heading down through the entire length of the fabric, remaining consistent from top to bottom. Each wave curves smoothly into the next with no sharp pinches and NO traditional pleats or gathered fullness at the top — the heading itself is flat and glides along a track, with the S-curve created purely by the fabric's own draping tension. Natural, soft shadows form inside each curve. This is a distinct, modern, tailored curtain system that must look clearly different from both single-pleat and double-pleat curtains — no vertical pinch pleats anywhere on the curtain.",
+};
+
+/**
+ * AI prompt text per fullness ratio — modulates fold/wave density and
+ * fabric volume on top of whichever `CURTAIN_FINISH_PROMPT` is selected.
+ * Deliberately relative/qualitative (an image model can't count folds to a
+ * literal ratio) but ordered so each step reads as visibly fuller than the
+ * last across all three finishes.
+ */
+export const CURTAIN_FULLNESS_PROMPT: Record<CurtainFullness, string> = {
+  1.6: "FULLNESS 1.6x (the lowest option offered): a comparatively modest amount of fabric relative to the track width — the lightest, least voluminous look on offer. Folds/waves should be more open and spaced further apart than the other fullness options, with visible flatter, calmer sections of fabric between them, while still fully covering the track width.",
+  1.8: "FULLNESS 1.8x (a standard, moderate amount): a well-balanced amount of fabric relative to the track width. Folds/waves should be evenly spaced with moderate depth and rhythm — noticeably fuller and denser than the 1.6x option, but clearly less voluminous than the 2.0x and 2.2x options.",
+  2.0: "FULLNESS 2.0x (a full, generous amount): a generous amount of fabric relative to the track width, producing a fuller, richer curtain. Folds/waves should sit closer together and deeper than the 1.8x look, with clearly increased fabric volume and a denser fold/wave rhythm — visibly fuller than 1.6x and 1.8x, but a step below the maximum 2.2x option.",
+  2.2: "FULLNESS 2.2x (the highest option offered — very full): an abundant amount of fabric relative to the track width. Folds/waves should be tightly spaced, deep and numerous, producing the lushest, densest, most voluminous curtain of all the fullness options — maximum visual fabric volume and the tightest, most frequent fold/wave rhythm, clearly and visibly fuller than every other fullness option.",
 };

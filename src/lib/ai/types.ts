@@ -1,4 +1,4 @@
-import type { Product, TreatmentState, TreatmentTypeId } from "@/types/product";
+import type { CurtainFinish, CurtainFullness, Product, TreatmentState, TreatmentTypeId } from "@/types/product";
 
 /** Normalized (0-1) bounding box, origin top-left — resolution independent. */
 export interface NormalizedBox {
@@ -47,6 +47,10 @@ export interface GenerateVisualizationParams {
   state: TreatmentState;
   /** Optional specific SKU (Phase 2: fabric/color picker) overriding the default. */
   product?: Product;
+  /** Curtain-family only — heading construction (see `CurtainFinish`). Ignored for blinds. */
+  curtainFinish?: CurtainFinish;
+  /** Curtain-family only — fabric fullness ratio (see `CurtainFullness`). Ignored for blinds. */
+  fullness?: CurtainFullness;
 }
 
 export interface GenerateVisualizationResult {

@@ -114,7 +114,13 @@ export class OpenAIProvider implements AIProvider {
   async generateVisualization(
     params: GenerateVisualizationParams,
   ): Promise<GenerateVisualizationResult> {
-    const prompt = buildEditPrompt(params.analysis, params.treatmentType, params.state, params.product);
+    const prompt = buildEditPrompt(
+      params.analysis,
+      params.treatmentType,
+      params.state,
+      params.product,
+      params.curtainFinish && params.fullness ? { finish: params.curtainFinish, fullness: params.fullness } : undefined,
+    );
 
     const imageBuffer = Buffer.from(params.imageBase64, "base64");
     const form = new FormData();

@@ -3,9 +3,11 @@ import { trackEvent } from "@/lib/analytics";
 import { getAIProvider } from "@/lib/ai/provider";
 import type { RoomAnalysis } from "@/lib/ai/types";
 import { checkRateLimit, getClientKey } from "@/lib/rateLimit";
-import { getDefaultProduct } from "@/lib/treatments";
+import { DEFAULT_CURTAIN_FINISH, DEFAULT_CURTAIN_FULLNESS, getDefaultProduct, hasCurtainConstruction } from "@/lib/treatments";
 import {
   ValidationError,
+  validateCurtainFinish,
+  validateCurtainFullness,
   validateImagePayload,
   validateProductId,
   validateTreatmentState,
@@ -39,6 +41,8 @@ export async function POST(request: Request) {
     treatmentType: rawTreatmentType,
     state: rawState,
     productId: rawProductId,
+    curtainFinish: rawCurtainFinish,
+    fullness: rawFullness,
     analysis: rawAnalysis,
   } = (body ?? {}) as Record<string, unknown>;
 
@@ -47,11 +51,18 @@ export async function POST(request: Request) {
   let treatmentType;
   let state;
   let product;
+  let curtainFinish;
+  let fullness;
   try {
     ({ mimeType, imageBase64 } = validateImagePayload(rawMime, rawImage));
     treatmentType = validateTreatmentType(rawTreatmentType);
     state = validateTreatmentState(rawState);
     product = validateProductId(rawProductId, treatmentType) ?? getDefaultProduct(treatmentType);
+    // Curtain-family only — wooden blinds have no heading/fullness, so these stay undefined for them.
+    if (hasCurtainConstruction(treatmentType)) {
+      curtainFinish = validateCurtainFinish(rawCurtainFinish) ?? DEFAULT_CURTAIN_FINISH;
+      fullness = validateCurtainFullness(rawFullness) ?? DEFAULT_CURTAIN_FULLNESS;
+    }
   } catch (err) {
     if (err instanceof ValidationError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
@@ -72,6 +83,8 @@ export async function POST(request: Request) {
       treatmentType,
       state,
       product,
+      curtainFinish,
+      fullness,
     });
     trackEvent({ type: "visualization_generated", treatmentType });
     return NextResponse.json({

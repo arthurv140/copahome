@@ -1,5 +1,5 @@
-import { TREATMENT_COPY, TREATMENT_PHYSICAL_PROPERTIES } from "@/lib/treatments";
-import type { Product, TreatmentState, TreatmentTypeId } from "@/types/product";
+import { CURTAIN_FINISH_PROMPT, CURTAIN_FULLNESS_PROMPT, TREATMENT_COPY, TREATMENT_PHYSICAL_PROPERTIES } from "@/lib/treatments";
+import type { CurtainFinish, CurtainFullness, Product, TreatmentState, TreatmentTypeId } from "@/types/product";
 import type { RoomAnalysis } from "./types";
 
 /**
@@ -74,17 +74,35 @@ function formatBox(box: RoomAnalysis["windows"][number]["boundingBox"]): string 
  * treatment" — the photo is the source of truth, the treatment (and its
  * open/closed state) is the only variable.
  */
+export interface CurtainConstruction {
+  finish: CurtainFinish;
+  fullness: CurtainFullness;
+}
+
 export function buildEditPrompt(
   analysis: RoomAnalysis,
   treatmentType: TreatmentTypeId,
   state: TreatmentState,
   product?: Product,
+  construction?: CurtainConstruction,
 ): string {
   const copy = TREATMENT_COPY[treatmentType];
   const isBlind = copy.family === "wooden_blind";
   const physicalDescription = TREATMENT_PHYSICAL_PROPERTIES[treatmentType][state];
   const treatmentNoun = isBlind ? "blind" : "curtain";
   const mountNoun = isBlind ? "blind headrail" : "curtain rod or rail";
+
+  // Curtain-only: the heading construction (pleat/wave) and fullness are a
+  // separate, dynamically-composed section — see CURTAIN_FINISH_PROMPT /
+  // CURTAIN_FULLNESS_PROMPT in lib/treatments.ts. Each finish×fullness
+  // combination must read as visibly distinct, not a label swap.
+  const constructionSection =
+    !isBlind && construction
+      ? `\n\nCURTAIN HEADING & FULLNESS (authoritative — must be clearly, visibly reflected in the fold/wave structure, not just described):
+${CURTAIN_FINISH_PROMPT[construction.finish]}
+${CURTAIN_FULLNESS_PROMPT[construction.fullness]}
+Both panels of the curtain (if shown as a pair) must use this exact same heading construction and fullness, with a matching, consistent fold/wave rhythm between them.`
+      : "";
 
   const windowLines = analysis.windows
     .map((w, i) => {
@@ -123,7 +141,7 @@ ${windowLines}
 ${treatmentNoun.toUpperCase()} TO RENDER${product ? ` — SPECIFIC FABRIC (authoritative — render exactly this, including any pattern, print, weave texture, sheen, or light transmission it describes, even where it differs from the general guidance below)` : ""}:
 ${productLine || "(no specific product selected — use the general guidance below)"}
 
-General material guidance for this category (follow only where the specific fabric above doesn't already say otherwise): ${physicalDescription}
+General material guidance for this category (follow only where the specific fabric above doesn't already say otherwise): ${physicalDescription}${constructionSection}
 
 STRICT RULES:
 - Preserve, pixel-for-pixel where possible, everything that is not the window treatment zone: furniture, floor, walls, ceiling, decor, lighting, plants, people or pets, architecture, camera angle and perspective must all remain identical to the original photo.
@@ -131,5 +149,11 @@ STRICT RULES:
 - Respect real-world occlusion: any furniture or object already in front of the window must remain in front of the new ${treatmentNoun}, not behind it.
 - Keep the ${treatmentNoun}'s proportions realistic relative to the window's width and height.
 - Match the new ${treatmentNoun}'s lighting, shadows and color temperature to the existing photo's light sources so it looks photographed, not composited.
-- Photorealism is the top priority: the result must look like the customer's real room with a different window treatment, not an AI-generated interior.`;
+${
+  constructionSection
+    ? `- The heading construction and fullness above change how the fabric is gathered, not the window's size or position, the track/rod position, or the amount of fabric width covering the track — only the pleat/wave architecture and fold density may change.
+- Fabric must drape and fold like real textile under gravity — no plastic/CGI look, no distorted, floating, or furniture-clipping fabric.
+`
+    : ""
+}- Photorealism is the top priority: the result must look like the customer's real room with a different window treatment, not an AI-generated interior.`;
 }

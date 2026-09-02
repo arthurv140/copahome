@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { prepareImageForUpload, type PreparedImage } from "@/lib/image-client";
 import type { RoomAnalysis } from "@/lib/ai/types";
-import { getDefaultProduct, TREATMENT_FAMILIES } from "@/lib/treatments";
-import type { TreatmentState, TreatmentTypeId } from "@/types/product";
+import { DEFAULT_CURTAIN_FINISH, DEFAULT_CURTAIN_FULLNESS, getDefaultProduct, hasCurtainConstruction, TREATMENT_FAMILIES } from "@/lib/treatments";
+import type { CurtainFinish, CurtainFullness, TreatmentState, TreatmentTypeId } from "@/types/product";
 import type { ActiveTab, ResultsMap } from "@/types/visualizer";
 import { CTASection } from "./CTASection";
 import { ErrorState } from "./ErrorState";
@@ -45,6 +45,13 @@ function getShareSupportServerSnapshot() {
   return false;
 }
 
+/** What can be overridden for a single generation call, on top of the current selection state. */
+interface GenerationOverrides {
+  productId?: string;
+  curtainFinish?: CurtainFinish;
+  fullness?: CurtainFullness;
+}
+
 export function Visualizer() {
   const [flowState, setFlowState] = useState<FlowState>("upload");
   const [photo, setPhoto] = useState<PreparedImage | null>(null);
@@ -55,6 +62,10 @@ export function Visualizer() {
   const [activeState, setActiveState] = useState<TreatmentState>("closed");
   const [results, setResults] = useState<ResultsMap>(buildEmptyResults);
   const [selectedProductByType, setSelectedProductByType] = useState<Partial<Record<TreatmentTypeId, string>>>({});
+  const [selectedFinishByType, setSelectedFinishByType] = useState<Partial<Record<TreatmentTypeId, CurtainFinish>>>({});
+  const [selectedFullnessByType, setSelectedFullnessByType] = useState<Partial<Record<TreatmentTypeId, CurtainFullness>>>(
+    {},
+  );
   const canShare = useSyncExternalStore(subscribeNoop, getShareSupportSnapshot, getShareSupportServerSnapshot);
 
   // Read inside async closures (background prefetch, in particular) so a check never
@@ -67,6 +78,12 @@ export function Visualizer() {
   function getActiveProductId(type: TreatmentTypeId): string {
     return selectedProductByType[type] ?? getDefaultProduct(type).id;
   }
+  function getActiveFinish(type: TreatmentTypeId): CurtainFinish {
+    return selectedFinishByType[type] ?? DEFAULT_CURTAIN_FINISH;
+  }
+  function getActiveFullness(type: TreatmentTypeId): CurtainFullness {
+    return selectedFullnessByType[type] ?? DEFAULT_CURTAIN_FULLNESS;
+  }
 
   /**
    * Starts generation for a type/state combo in the background if — and only
@@ -75,10 +92,10 @@ export function Visualizer() {
    * (on hover, or right after a neighbouring combo finishes) without
    * yanking the customer's view around.
    */
-  function ensureGenerated(type: TreatmentTypeId, state: TreatmentState, productIdOverride?: string) {
+  function ensureGenerated(type: TreatmentTypeId, state: TreatmentState, overrides?: GenerationOverrides) {
     const status = resultsRef.current[type]?.[state]?.status ?? "idle";
     if (status === "idle") {
-      runGeneration(type, state, productIdOverride);
+      runGeneration(type, state, overrides);
     }
   }
 
@@ -92,18 +109,37 @@ export function Visualizer() {
     if (activeTab !== "original") ensureGenerated(activeTab, state);
   }
 
-  function handleProductChange(type: TreatmentTypeId, productId: string) {
-    setSelectedProductByType((prev) => ({ ...prev, [type]: productId }));
-    // The cached result(s) for this type no longer match the newly chosen fabric.
+  /**
+   * Shared by the fabric/colour, finish and fullness pickers: any one of
+   * them changing invalidates the cached result(s) for that treatment type
+   * (they no longer reflect what's selected) and, if the customer is
+   * currently looking at that type, immediately regenerates the view they
+   * have open — no extra "Generate" click, matching the fabric/colour
+   * picker's existing behaviour.
+   */
+  function applySelectionChange(type: TreatmentTypeId, overrides: GenerationOverrides) {
     setResults((prev) => ({
       ...prev,
       [type]: { closed: { status: "idle" }, open: { status: "idle" } },
     }));
-    // Switching fabric/colour should feel instant, not require an extra click — regenerate
-    // the view the customer is currently looking at right away, with the new choice.
     if (type === activeTab) {
-      runGeneration(type, activeState, productId);
+      runGeneration(type, activeState, overrides);
     }
+  }
+
+  function handleProductChange(type: TreatmentTypeId, productId: string) {
+    setSelectedProductByType((prev) => ({ ...prev, [type]: productId }));
+    applySelectionChange(type, { productId });
+  }
+
+  function handleFinishChange(type: TreatmentTypeId, curtainFinish: CurtainFinish) {
+    setSelectedFinishByType((prev) => ({ ...prev, [type]: curtainFinish }));
+    applySelectionChange(type, { curtainFinish });
+  }
+
+  function handleFullnessChange(type: TreatmentTypeId, fullness: CurtainFullness) {
+    setSelectedFullnessByType((prev) => ({ ...prev, [type]: fullness }));
+    applySelectionChange(type, { fullness });
   }
 
   async function runAnalysis(image: PreparedImage) {
@@ -147,6 +183,8 @@ export function Visualizer() {
       setActiveTab("original");
       setActiveState("closed");
       setSelectedProductByType({});
+      setSelectedFinishByType({});
+      setSelectedFullnessByType({});
       await runAnalysis(prepared);
     } catch {
       setAnalysisError({
@@ -158,9 +196,12 @@ export function Visualizer() {
   }
 
   /** Pure background fetch + cache update — no navigation side effects, so it's safe for prefetching. */
-  async function runGeneration(treatmentType: TreatmentTypeId, state: TreatmentState, productIdOverride?: string) {
+  async function runGeneration(treatmentType: TreatmentTypeId, state: TreatmentState, overrides?: GenerationOverrides) {
     if (!photo || !analysis) return;
-    const productId = productIdOverride ?? getActiveProductId(treatmentType);
+    const productId = overrides?.productId ?? getActiveProductId(treatmentType);
+    const isCurtain = hasCurtainConstruction(treatmentType);
+    const curtainFinish = isCurtain ? overrides?.curtainFinish ?? getActiveFinish(treatmentType) : undefined;
+    const fullness = isCurtain ? overrides?.fullness ?? getActiveFullness(treatmentType) : undefined;
 
     setResults((prev) => ({
       ...prev,
@@ -177,6 +218,8 @@ export function Visualizer() {
           treatmentType,
           state,
           productId,
+          curtainFinish,
+          fullness,
           analysis,
         }),
       });
@@ -209,7 +252,7 @@ export function Visualizer() {
       // next click — start it quietly in the background so flipping the toggle after this
       // feels instant instead of waiting on a fresh AI generation.
       const otherState: TreatmentState = state === "closed" ? "open" : "closed";
-      ensureGenerated(treatmentType, otherState, productId);
+      ensureGenerated(treatmentType, otherState, { productId, curtainFinish, fullness });
     } catch {
       setResults((prev) => ({
         ...prev,
@@ -228,11 +271,11 @@ export function Visualizer() {
    * status — unlike `ensureGenerated`, which is for passive/speculative
    * triggers and must never override an error or in-flight/cached result.
    */
-  function generateFor(treatmentType: TreatmentTypeId, state: TreatmentState, productIdOverride?: string) {
+  function generateFor(treatmentType: TreatmentTypeId, state: TreatmentState, overrides?: GenerationOverrides) {
     setFlowState("result");
     setActiveTab(treatmentType);
     setActiveState(state);
-    runGeneration(treatmentType, state, productIdOverride);
+    runGeneration(treatmentType, state, overrides);
   }
 
   function handleReset() {
@@ -245,6 +288,8 @@ export function Visualizer() {
     setActiveState("closed");
     setResults(buildEmptyResults());
     setSelectedProductByType({});
+    setSelectedFinishByType({});
+    setSelectedFullnessByType({});
   }
 
   function handleDownload(dataUrl: string, filename: string) {
@@ -353,6 +398,12 @@ export function Visualizer() {
             onStateChange={handleStateChange}
             selectedProductId={activeTab !== "original" ? getActiveProductId(activeTab) : ""}
             onProductChange={(productId) => activeTab !== "original" && handleProductChange(activeTab, productId)}
+            selectedFinish={activeTab !== "original" && hasCurtainConstruction(activeTab) ? getActiveFinish(activeTab) : undefined}
+            onFinishChange={(finish) => activeTab !== "original" && handleFinishChange(activeTab, finish)}
+            selectedFullness={
+              activeTab !== "original" && hasCurtainConstruction(activeTab) ? getActiveFullness(activeTab) : undefined
+            }
+            onFullnessChange={(fullness) => activeTab !== "original" && handleFullnessChange(activeTab, fullness)}
             results={results}
             onGenerate={generateFor}
             onDownload={handleDownload}

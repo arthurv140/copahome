@@ -1,5 +1,13 @@
-import { getProductsForType, TREATMENT_COPY, TREATMENT_FAMILIES } from "@/lib/treatments";
-import type { TreatmentState, TreatmentTypeId } from "@/types/product";
+import {
+  CURTAIN_FINISH_COPY,
+  CURTAIN_FINISHES,
+  CURTAIN_FULLNESS_OPTIONS,
+  getProductsForType,
+  hasCurtainConstruction,
+  TREATMENT_COPY,
+  TREATMENT_FAMILIES,
+} from "@/lib/treatments";
+import type { CurtainFinish, CurtainFullness, TreatmentState, TreatmentTypeId } from "@/types/product";
 import type { ActiveTab, ResultsMap } from "@/types/visualizer";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
 import { ErrorState } from "./ErrorState";
@@ -17,6 +25,11 @@ interface ResultTabsProps {
   onStateChange: (state: TreatmentState) => void;
   selectedProductId: string;
   onProductChange: (productId: string) => void;
+  /** Curtain-family only — undefined (and the picker hidden) for wooden blinds/the "original" tab. */
+  selectedFinish?: CurtainFinish;
+  onFinishChange: (finish: CurtainFinish) => void;
+  selectedFullness?: CurtainFullness;
+  onFullnessChange: (fullness: CurtainFullness) => void;
   results: ResultsMap;
   onGenerate: (type: TreatmentTypeId, state: TreatmentState) => void;
   onDownload: (dataUrl: string, filename: string) => void;
@@ -32,6 +45,10 @@ export function ResultTabs({
   onStateChange,
   selectedProductId,
   onProductChange,
+  selectedFinish,
+  onFinishChange,
+  selectedFullness,
+  onFullnessChange,
   results,
   onGenerate,
   onDownload,
@@ -39,6 +56,7 @@ export function ResultTabs({
   canShare,
 }: ResultTabsProps) {
   const productsForActiveTab = activeTab !== "original" ? getProductsForType(activeTab) : [];
+  const showConstruction = activeTab !== "original" && hasCurtainConstruction(activeTab);
 
   return (
     <div className="w-full animate-fade-up space-y-8">
@@ -60,46 +78,41 @@ export function ResultTabs({
       </div>
 
       {activeTab !== "original" ? (
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-          {productsForActiveTab.length > 1 ? (
-            <div className="flex items-center gap-3">
-              <span className="text-xs uppercase tracking-[0.15em] text-muted">
-                {TREATMENT_COPY[activeTab].family === "wooden_blind" ? "Color" : "Fabric"}
-              </span>
-              <div className="inline-flex gap-1 rounded-full bg-foreground/[0.04] p-1">
-                {productsForActiveTab.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => onProductChange(p.id)}
-                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                      selectedProductId === p.id ? "bg-foreground text-background" : "text-foreground/60 hover:text-foreground"
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+            {productsForActiveTab.length > 1 ? (
+              <ChipGroup
+                label={TREATMENT_COPY[activeTab].family === "wooden_blind" ? "Color" : "Fabric"}
+                options={productsForActiveTab.map((p) => ({ value: p.id, label: p.name }))}
+                selected={selectedProductId}
+                onChange={onProductChange}
+              />
+            ) : null}
+
+            <ChipGroup
+              label="Position"
+              options={(["closed", "open"] as TreatmentState[]).map((s) => ({ value: s, label: STATE_LABEL[s] }))}
+              selected={activeState}
+              onChange={(value) => onStateChange(value as TreatmentState)}
+            />
+          </div>
+
+          {showConstruction && selectedFinish && selectedFullness ? (
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+              <ChipGroup
+                label="Finish"
+                options={CURTAIN_FINISHES.map((f) => ({ value: f, label: CURTAIN_FINISH_COPY[f].label }))}
+                selected={selectedFinish}
+                onChange={(value) => onFinishChange(value as CurtainFinish)}
+              />
+              <ChipGroup
+                label="Fullness"
+                options={CURTAIN_FULLNESS_OPTIONS.map((f) => ({ value: String(f), label: `${f.toFixed(1)}x` }))}
+                selected={String(selectedFullness)}
+                onChange={(value) => onFullnessChange(Number(value) as CurtainFullness)}
+              />
             </div>
           ) : null}
-
-          <div className="flex items-center gap-3">
-            <span className="text-xs uppercase tracking-[0.15em] text-muted">Position</span>
-            <div className="inline-flex gap-1 rounded-full bg-foreground/[0.04] p-1">
-              {(["closed", "open"] as TreatmentState[]).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => onStateChange(s)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                    activeState === s ? "bg-foreground text-background" : "text-foreground/60 hover:text-foreground"
-                  }`}
-                >
-                  {STATE_LABEL[s]}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       ) : null}
 
@@ -116,6 +129,11 @@ export function ResultTabs({
           treatmentType={activeTab}
           state={activeState}
           productName={productsForActiveTab.find((p) => p.id === selectedProductId)?.name}
+          constructionLabel={
+            showConstruction && selectedFinish && selectedFullness
+              ? `${CURTAIN_FINISH_COPY[selectedFinish].label} ${selectedFullness.toFixed(1)}x`
+              : undefined
+          }
           entry={results[activeTab]?.[activeState]}
           originalDataUrl={originalDataUrl}
           onGenerate={onGenerate}
@@ -124,6 +142,39 @@ export function ResultTabs({
           canShare={canShare}
         />
       )}
+    </div>
+  );
+}
+
+/** A labelled row of small pill buttons, one active at a time — shared by the fabric/colour, position, finish and fullness pickers. */
+function ChipGroup({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  options: { value: string; label: string }[];
+  selected: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-xs uppercase tracking-[0.15em] text-muted">{label}</span>
+      <div className="inline-flex gap-1 rounded-full bg-foreground/[0.04] p-1">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              selected === opt.value ? "bg-foreground text-background" : "text-foreground/60 hover:text-foreground"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -163,6 +214,7 @@ function TreatmentResultPanel({
   treatmentType,
   state,
   productName,
+  constructionLabel,
   entry,
   originalDataUrl,
   onGenerate,
@@ -173,6 +225,7 @@ function TreatmentResultPanel({
   treatmentType: TreatmentTypeId;
   state: TreatmentState;
   productName?: string;
+  constructionLabel?: string;
   entry: ResultsMap[TreatmentTypeId][TreatmentState] | undefined;
   originalDataUrl: string;
   onGenerate: (type: TreatmentTypeId, state: TreatmentState) => void;
@@ -182,7 +235,9 @@ function TreatmentResultPanel({
 }) {
   const status = entry?.status ?? "idle";
   const copy = TREATMENT_COPY[treatmentType];
-  const fileSlug = `${treatmentType}${productName ? `-${productName.toLowerCase()}` : ""}-${state}`;
+  const fileSlug = `${treatmentType}${productName ? `-${productName.toLowerCase()}` : ""}${
+    constructionLabel ? `-${constructionLabel.toLowerCase().replace(/\s+/g, "-")}` : ""
+  }-${state}`;
 
   if (status === "loading") {
     return <LoadingState messages={GENERATE_MESSAGES} />;
@@ -233,7 +288,8 @@ function TreatmentResultPanel({
     <div className="flex min-h-[420px] w-full flex-col items-center justify-center gap-5 rounded-[28px] bg-surface px-6 py-16 text-center shadow-[0_30px_60px_-40px_rgba(27,26,23,0.18)] sm:min-h-[520px]">
       <p className="text-2xl font-medium tracking-tight">
         {copy.label}
-        {productName ? ` — ${productName}` : ""} · {STATE_LABEL[state]}
+        {productName ? ` — ${productName}` : ""}
+        {constructionLabel ? ` — ${constructionLabel}` : ""} · {STATE_LABEL[state]}
       </p>
       <p className="max-w-sm text-sm leading-relaxed text-muted">{copy.description}</p>
       <button

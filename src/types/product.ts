@@ -24,6 +24,21 @@ export type TreatmentTypeId =
 /** Whether the treatment is shown drawn/tilted open (window visible) or closed (window covered). */
 export type TreatmentState = "closed" | "open";
 
+/**
+ * Curtain heading construction — how the fabric is pleated/gathered at the
+ * top. Curtain-family only (`TreatmentFamily === "curtain"`); wooden blinds
+ * have no heading. Orthogonal to `Product`/fabric: this is a construction
+ * choice the customer makes independently of which fabric they picked.
+ */
+export type CurtainFinish = "single_pleat" | "double_pleat" | "wave";
+
+/**
+ * Fabric fullness ratio — how many times the finished track width is used
+ * in fabric (2.0 = twice the track width, gathered down to size). Curtain-
+ * family only, same as `CurtainFinish`.
+ */
+export type CurtainFullness = 1.6 | 1.8 | 2.0 | 2.2;
+
 export type TransparencyLevel = "high" | "medium" | "low";
 
 export interface Product {
