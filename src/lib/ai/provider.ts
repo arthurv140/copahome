@@ -1,5 +1,4 @@
 import { GeminiProvider } from "./providers/gemini";
-import { HuggingFaceProvider } from "./providers/huggingface";
 import { MockProvider } from "./providers/mock";
 import { OpenAIProvider } from "./providers/openai";
 import type { AIProvider } from "./types";
@@ -24,9 +23,6 @@ export function getAIProvider(): AIProvider {
         break;
       case "openai":
         cachedProvider = new OpenAIProvider();
-        break;
-      case "huggingface":
-        cachedProvider = new HuggingFaceProvider();
         break;
       case "mock":
         cachedProvider = new MockProvider();

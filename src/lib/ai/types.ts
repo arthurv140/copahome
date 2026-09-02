@@ -1,4 +1,4 @@
-import type { CurtainTypeId, Product } from "@/types/product";
+import type { Product, TreatmentState, TreatmentTypeId } from "@/types/product";
 
 /** Normalized (0-1) bounding box, origin top-left — resolution independent. */
 export interface NormalizedBox {
@@ -43,7 +43,8 @@ export interface GenerateVisualizationParams {
   imageBase64: string;
   mimeType: string;
   analysis: RoomAnalysis;
-  curtainType: CurtainTypeId;
+  treatmentType: TreatmentTypeId;
+  state: TreatmentState;
   /** Optional specific SKU (Phase 2: fabric/color picker) overriding the default. */
   product?: Product;
 }

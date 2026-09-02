@@ -3,12 +3,13 @@
 import { useState, useSyncExternalStore } from "react";
 import { prepareImageForUpload, type PreparedImage } from "@/lib/image-client";
 import type { RoomAnalysis } from "@/lib/ai/types";
-import type { CurtainTypeId } from "@/types/product";
+import { TREATMENT_FAMILIES } from "@/lib/treatments";
+import type { TreatmentState, TreatmentTypeId } from "@/types/product";
 import type { ActiveTab, ResultsMap } from "@/types/visualizer";
-import { CurtainTypeSelector } from "./CurtainTypeSelector";
 import { ErrorState } from "./ErrorState";
 import { LoadingState } from "./LoadingState";
 import { ResultTabs } from "./ResultTabs";
+import { TreatmentSelector } from "./TreatmentSelector";
 import { UploadDropzone } from "./UploadDropzone";
 
 type FlowState = "upload" | "analyzing" | "analysis_error" | "select" | "result";
@@ -19,11 +20,13 @@ interface AnalysisError {
   kind: "no_window" | "other";
 }
 
-const EMPTY_RESULTS: ResultsMap = {
-  transparent: { status: "idle" },
-  semi_transparent: { status: "idle" },
-  blackout: { status: "idle" },
-};
+function buildEmptyResults(): ResultsMap {
+  const entries = TREATMENT_FAMILIES.flatMap((f) => f.types).map((type) => [
+    type,
+    { closed: { status: "idle" as const }, open: { status: "idle" as const } },
+  ]);
+  return Object.fromEntries(entries) as ResultsMap;
+}
 
 // Web Share API is a browser-only capability with no change events, so we
 // read it via useSyncExternalStore (subscribe is a no-op) rather than an
@@ -43,9 +46,10 @@ export function Visualizer() {
   const [photo, setPhoto] = useState<PreparedImage | null>(null);
   const [analysis, setAnalysis] = useState<RoomAnalysis | null>(null);
   const [analysisError, setAnalysisError] = useState<AnalysisError | null>(null);
-  const [selectedType, setSelectedType] = useState<CurtainTypeId | null>(null);
+  const [selectedType, setSelectedType] = useState<TreatmentTypeId | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("original");
-  const [results, setResults] = useState<ResultsMap>(EMPTY_RESULTS);
+  const [activeState, setActiveState] = useState<TreatmentState>("closed");
+  const [results, setResults] = useState<ResultsMap>(buildEmptyResults);
   const canShare = useSyncExternalStore(subscribeNoop, getShareSupportSnapshot, getShareSupportServerSnapshot);
 
   async function runAnalysis(image: PreparedImage) {
@@ -84,9 +88,10 @@ export function Visualizer() {
     try {
       const prepared = await prepareImageForUpload(file);
       setPhoto(prepared);
-      setResults(EMPTY_RESULTS);
+      setResults(buildEmptyResults());
       setSelectedType(null);
       setActiveTab("original");
+      setActiveState("closed");
       await runAnalysis(prepared);
     } catch {
       setAnalysisError({
@@ -97,12 +102,16 @@ export function Visualizer() {
     }
   }
 
-  async function generateFor(curtainType: CurtainTypeId) {
+  async function generateFor(treatmentType: TreatmentTypeId, state: TreatmentState) {
     if (!photo || !analysis) return;
 
-    setResults((prev) => ({ ...prev, [curtainType]: { status: "loading" } }));
+    setResults((prev) => ({
+      ...prev,
+      [treatmentType]: { ...prev[treatmentType], [state]: { status: "loading" } },
+    }));
     setFlowState("result");
-    setActiveTab(curtainType);
+    setActiveTab(treatmentType);
+    setActiveState(state);
 
     try {
       const res = await fetch("/api/generate", {
@@ -111,7 +120,8 @@ export function Visualizer() {
         body: JSON.stringify({
           mimeType: photo.mimeType,
           imageBase64: photo.base64,
-          curtainType,
+          treatmentType,
+          state,
           analysis,
         }),
       });
@@ -120,9 +130,12 @@ export function Visualizer() {
       if (!res.ok) {
         setResults((prev) => ({
           ...prev,
-          [curtainType]: {
-            status: "error",
-            errorMessage: data.error ?? "Er ging iets mis bij het genereren van deze visualisatie.",
+          [treatmentType]: {
+            ...prev[treatmentType],
+            [state]: {
+              status: "error",
+              errorMessage: data.error ?? "Er ging iets mis bij het genereren van deze visualisatie.",
+            },
           },
         }));
         return;
@@ -131,12 +144,18 @@ export function Visualizer() {
       const dataUrl = `data:${data.image.mimeType};base64,${data.image.base64}`;
       setResults((prev) => ({
         ...prev,
-        [curtainType]: { status: "done", imageDataUrl: dataUrl, providerNotes: data.providerNotes },
+        [treatmentType]: {
+          ...prev[treatmentType],
+          [state]: { status: "done", imageDataUrl: dataUrl, providerNotes: data.providerNotes },
+        },
       }));
     } catch {
       setResults((prev) => ({
         ...prev,
-        [curtainType]: { status: "error", errorMessage: "Netwerkfout. Probeer opnieuw." },
+        [treatmentType]: {
+          ...prev[treatmentType],
+          [state]: { status: "error", errorMessage: "Netwerkfout. Probeer opnieuw." },
+        },
       }));
     }
   }
@@ -148,7 +167,8 @@ export function Visualizer() {
     setAnalysisError(null);
     setSelectedType(null);
     setActiveTab("original");
-    setResults(EMPTY_RESULTS);
+    setActiveState("closed");
+    setResults(buildEmptyResults());
   }
 
   function handleDownload(dataUrl: string, filename: string) {
@@ -206,11 +226,12 @@ export function Visualizer() {
             alt="Geüploade interieurfoto"
             className="aspect-[4/3] w-full rounded-2xl border border-border object-cover"
           />
-          <CurtainTypeSelector selected={selectedType} onSelect={setSelectedType} />
+          <h2 className="font-display text-2xl">Kies jouw raamdecoratie</h2>
+          <TreatmentSelector selected={selectedType} onSelect={setSelectedType} />
           <button
             type="button"
             disabled={!selectedType}
-            onClick={() => selectedType && generateFor(selectedType)}
+            onClick={() => selectedType && generateFor(selectedType, "closed")}
             className="w-full rounded-full bg-foreground px-6 py-3.5 text-sm font-medium text-background transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
           >
             Genereer visualisatie
@@ -223,6 +244,8 @@ export function Visualizer() {
           originalDataUrl={photo.dataUrl}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          activeState={activeState}
+          onStateChange={setActiveState}
           results={results}
           onGenerate={generateFor}
           onDownload={handleDownload}

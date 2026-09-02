@@ -119,7 +119,7 @@ export class GeminiProvider implements AIProvider {
   async generateVisualization(
     params: GenerateVisualizationParams,
   ): Promise<GenerateVisualizationResult> {
-    const prompt = buildEditPrompt(params.analysis, params.curtainType, params.product);
+    const prompt = buildEditPrompt(params.analysis, params.treatmentType, params.state, params.product);
 
     const response = await this.callGemini(this.imageModel, {
       contents: [

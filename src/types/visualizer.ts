@@ -1,15 +1,16 @@
-import type { CurtainTypeId } from "./product";
+import type { TreatmentState, TreatmentTypeId } from "./product";
 
-export type CurtainResultStatus = "idle" | "loading" | "done" | "error";
+export type TreatmentResultStatus = "idle" | "loading" | "done" | "error";
 
-export interface CurtainResultEntry {
-  status: CurtainResultStatus;
+export interface TreatmentResultEntry {
+  status: TreatmentResultStatus;
   imageDataUrl?: string;
   errorMessage?: string;
-  /** Set by the mock provider (no AI_PROVIDER key configured) to flag that this is not a real generation. */
+  /** Set by the mock/Hugging Face providers to flag a non-standard result (demo mode / experimental quality). */
   providerNotes?: string;
 }
 
-export type ResultsMap = Record<CurtainTypeId, CurtainResultEntry>;
+/** Keyed by treatment type, then by open/closed state — each combination is its own generation. */
+export type ResultsMap = Record<TreatmentTypeId, Record<TreatmentState, TreatmentResultEntry>>;
 
-export type ActiveTab = "original" | CurtainTypeId;
+export type ActiveTab = "original" | TreatmentTypeId;

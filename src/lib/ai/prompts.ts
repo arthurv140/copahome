@@ -1,5 +1,5 @@
-import { CURTAIN_PHYSICAL_PROPERTIES } from "@/lib/curtains";
-import type { CurtainTypeId, Product } from "@/types/product";
+import { TREATMENT_COPY, TREATMENT_PHYSICAL_PROPERTIES } from "@/lib/treatments";
+import type { Product, TreatmentState, TreatmentTypeId } from "@/types/product";
 import type { RoomAnalysis } from "./types";
 
 /**
@@ -10,13 +10,13 @@ import type { RoomAnalysis } from "./types";
  * notes are what the edit prompt (below) uses to constrain the generation
  * step to the window zone only.
  */
-export const ANALYSIS_SYSTEM_PROMPT = `You are a computer vision system for a Belgian window-treatment (curtains) company.
-Analyze the attached interior photo and identify every window or glass door where curtains could realistically be hung.
+export const ANALYSIS_SYSTEM_PROMPT = `You are a computer vision system for a Belgian window-treatment company (curtains and wooden venetian blinds).
+Analyze the attached interior photo and identify every window or glass door where a window treatment could realistically be mounted.
 
 For each one, determine:
 - a tight bounding box (normalized 0-1, origin top-left)
-- whether curtains already exist on it
-- which foreground objects (furniture, plants, ...) partially occlude it and must stay in front of any curtain
+- whether curtains or blinds already exist on it
+- which foreground objects (furniture, plants, ...) partially occlude it and must stay in front of any curtain/blind
 - the normalized y-coordinate of the floor directly below the window (where a floor-length curtain would end), if visible
 - a rough estimated width in meters, only if the room's perspective makes this reasonably inferable, otherwise null
 
@@ -70,31 +70,39 @@ function formatBox(box: RoomAnalysis["windows"][number]["boundingBox"]): string 
 /**
  * Builds the instruction for the image-editing step. Follows the core
  * principle from the brief: "Edit the customer's existing photograph as
- * minimally as possible while realistically adding the selected curtain
- * treatment" — the photo is the source of truth, the curtain is the only
- * variable.
+ * minimally as possible while realistically adding the selected window
+ * treatment" — the photo is the source of truth, the treatment (and its
+ * open/closed state) is the only variable.
  */
 export function buildEditPrompt(
   analysis: RoomAnalysis,
-  curtainType: CurtainTypeId,
+  treatmentType: TreatmentTypeId,
+  state: TreatmentState,
   product?: Product,
 ): string {
-  const fabric = CURTAIN_PHYSICAL_PROPERTIES[curtainType];
+  const copy = TREATMENT_COPY[treatmentType];
+  const isBlind = copy.family === "wooden_blind";
+  const physicalDescription = TREATMENT_PHYSICAL_PROPERTIES[treatmentType][state];
+  const treatmentNoun = isBlind ? "blind" : "curtain";
+  const mountNoun = isBlind ? "blind headrail" : "curtain rod or rail";
+
   const windowLines = analysis.windows
     .map((w, i) => {
       const parts = [
         `${i + 1}. "${w.label}" at ${formatBox(w.boundingBox)}.`,
         w.hasExistingCurtains
-          ? "This window already has curtains/blinds — replace them entirely with the new curtain."
-          : "This window currently has no curtains.",
+          ? `This window already has a window treatment — replace it entirely with the new ${treatmentNoun}.`
+          : "This window currently has no window treatment.",
         w.occludedBy.length > 0
-          ? `Objects in front of this window that must stay in front of the new curtain, unmodified: ${w.occludedBy.join(", ")}.`
+          ? `Objects in front of this window that must stay in front of the new ${treatmentNoun}, unmodified: ${w.occludedBy.join(", ")}.`
           : "",
-        w.floorLineY != null
-          ? `The curtain should hang from just above the window down to approximately y=${w.floorLineY.toFixed(2)} (the floor line).`
-          : "The curtain should hang from just above the window frame down to the floor.",
+        isBlind
+          ? "The blind should cover the window opening from just inside the top of the frame down to the windowsill or bottom of the frame."
+          : w.floorLineY != null
+            ? `The curtain should hang from just above the window down to approximately y=${w.floorLineY.toFixed(2)} (the floor line).`
+            : "The curtain should hang from just above the window frame down to the floor.",
         w.estimatedWidthMeters
-          ? `Keep the curtain width proportional to the window's real-world width of roughly ${w.estimatedWidthMeters.toFixed(1)}m.`
+          ? `Keep the ${treatmentNoun} width proportional to the window's real-world width of roughly ${w.estimatedWidthMeters.toFixed(1)}m.`
           : "",
       ];
       return parts.filter(Boolean).join(" ");
@@ -102,24 +110,24 @@ export function buildEditPrompt(
     .join("\n");
 
   const productLine = product
-    ? `Use this specific fabric where it does not conflict with the physical description below: ${product.name}, color ${product.color}, fabric ${product.fabric}.`
+    ? `Use this specific product where it does not conflict with the physical description below: ${product.name}, color ${product.color}${product.fabric ? `, fabric ${product.fabric}` : ""}${product.material ? `, material ${product.material}` : ""}.`
     : "";
 
-  return `Edit this exact interior photograph. Do not generate a new room. Do not regenerate anything outside the window/curtain zones described below.
+  return `Edit this exact interior photograph. Do not generate a new room. Do not regenerate anything outside the window/${treatmentNoun} zones described below.
 
 ROOM CONTEXT: ${analysis.roomDescription} Lighting: ${analysis.lightingNotes} Perspective: ${analysis.perspectiveNotes}
 
-TASK: Add or replace window curtains on the following window(s), and nothing else:
+TASK: Add or replace a ${treatmentNoun}, in its ${state} position, on the following window(s), and nothing else:
 ${windowLines}
 
-CURTAIN FABRIC TO RENDER: ${fabric}
+${treatmentNoun.toUpperCase()} TO RENDER: ${physicalDescription}
 ${productLine}
 
 STRICT RULES:
-- Preserve, pixel-for-pixel where possible, everything that is not the curtain/window-treatment zone: furniture, floor, walls, ceiling, decor, lighting, plants, people or pets, architecture, camera angle and perspective must all remain identical to the original photo.
-- The curtain must hang realistically from a curtain rod or rail mounted above the window frame — it must never appear to float or be pasted on flat. Include natural, physically plausible folds and correct perspective distortion matching the room.
-- Respect real-world occlusion: any furniture or object already in front of the window must remain in front of the new curtain, not behind it.
-- Keep the curtain's proportions realistic relative to the window's width and floor-to-window height.
-- Match the new curtain's lighting, shadows and color temperature to the existing photo's light sources so it looks photographed, not composited.
-- Photorealism is the top priority: the result must look like the customer's real room with different curtains, not an AI-generated interior.`;
+- Preserve, pixel-for-pixel where possible, everything that is not the window treatment zone: furniture, floor, walls, ceiling, decor, lighting, plants, people or pets, architecture, camera angle and perspective must all remain identical to the original photo.
+- The ${treatmentNoun} must be mounted realistically on a ${mountNoun} above the window frame — it must never appear to float or be pasted on flat. Include correct perspective distortion matching the room.
+- Respect real-world occlusion: any furniture or object already in front of the window must remain in front of the new ${treatmentNoun}, not behind it.
+- Keep the ${treatmentNoun}'s proportions realistic relative to the window's width and height.
+- Match the new ${treatmentNoun}'s lighting, shadows and color temperature to the existing photo's light sources so it looks photographed, not composited.
+- Photorealism is the top priority: the result must look like the customer's real room with a different window treatment, not an AI-generated interior.`;
 }

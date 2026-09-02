@@ -1,7 +1,15 @@
-import type { CurtainTypeId } from "@/types/product";
+import type { TreatmentState, TreatmentTypeId } from "@/types/product";
 
 export const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-export const ALLOWED_CURTAIN_TYPES: CurtainTypeId[] = ["transparent", "semi_transparent", "blackout"];
+export const ALLOWED_TREATMENT_TYPES: TreatmentTypeId[] = [
+  "transparent",
+  "semi_transparent",
+  "blackout",
+  "wooden_blind_35mm",
+  "wooden_blind_50mm",
+  "wooden_blind_63mm",
+];
+export const ALLOWED_TREATMENT_STATES: TreatmentState[] = ["closed", "open"];
 
 /** Decoded-bytes cap. Client resizes before upload (see lib/image-client.ts) so this is a hard safety ceiling, not the expected size. */
 export const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -37,9 +45,16 @@ export function validateImagePayload(mimeType: unknown, imageBase64: unknown): {
   return { mimeType, imageBase64 };
 }
 
-export function validateCurtainType(value: unknown): CurtainTypeId {
-  if (typeof value !== "string" || !ALLOWED_CURTAIN_TYPES.includes(value as CurtainTypeId)) {
-    throw new ValidationError("Ongeldig gordijntype.");
+export function validateTreatmentType(value: unknown): TreatmentTypeId {
+  if (typeof value !== "string" || !ALLOWED_TREATMENT_TYPES.includes(value as TreatmentTypeId)) {
+    throw new ValidationError("Ongeldig type raamdecoratie.");
   }
-  return value as CurtainTypeId;
+  return value as TreatmentTypeId;
+}
+
+export function validateTreatmentState(value: unknown): TreatmentState {
+  if (typeof value !== "string" || !ALLOWED_TREATMENT_STATES.includes(value as TreatmentState)) {
+    throw new ValidationError("Ongeldige stand (open/toe).");
+  }
+  return value as TreatmentState;
 }

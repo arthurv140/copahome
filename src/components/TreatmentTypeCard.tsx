@@ -1,20 +1,27 @@
-import type { CurtainTypeId } from "@/types/product";
-import type { CurtainTypeCopy } from "@/lib/curtains";
+import type { TreatmentTypeId } from "@/types/product";
+import type { TreatmentCopy } from "@/lib/treatments";
 
-const SWATCH: Record<CurtainTypeId, { overlayOpacity: number; overlayColor: string; foldOpacity: number }> = {
-  transparent: { overlayOpacity: 0.12, overlayColor: "#ffffff", foldOpacity: 0.06 },
-  semi_transparent: { overlayOpacity: 0.55, overlayColor: "#cbb79a", foldOpacity: 0.12 },
-  blackout: { overlayOpacity: 0.94, overlayColor: "#2a2724", foldOpacity: 0.22 },
+const SWATCH: Record<
+  TreatmentTypeId,
+  { overlayOpacity: number; overlayColor: string; lineOpacity: number; pattern: "vertical" | "horizontal"; spacingPx: number }
+> = {
+  transparent: { overlayOpacity: 0.12, overlayColor: "#ffffff", lineOpacity: 0.06, pattern: "vertical", spacingPx: 18 },
+  semi_transparent: { overlayOpacity: 0.55, overlayColor: "#cbb79a", lineOpacity: 0.12, pattern: "vertical", spacingPx: 18 },
+  blackout: { overlayOpacity: 0.94, overlayColor: "#2a2724", lineOpacity: 0.22, pattern: "vertical", spacingPx: 18 },
+  wooden_blind_35mm: { overlayOpacity: 0.88, overlayColor: "#ab7a4c", lineOpacity: 0.4, pattern: "horizontal", spacingPx: 8 },
+  wooden_blind_50mm: { overlayOpacity: 0.88, overlayColor: "#9c6a3f", lineOpacity: 0.4, pattern: "horizontal", spacingPx: 12 },
+  wooden_blind_63mm: { overlayOpacity: 0.88, overlayColor: "#8a5a34", lineOpacity: 0.4, pattern: "horizontal", spacingPx: 16 },
 };
 
-interface CurtainTypeCardProps {
-  copy: CurtainTypeCopy;
+interface TreatmentTypeCardProps {
+  copy: TreatmentCopy;
   selected: boolean;
-  onSelect: (id: CurtainTypeId) => void;
+  onSelect: (id: TreatmentTypeId) => void;
 }
 
-export function CurtainTypeCard({ copy, selected, onSelect }: CurtainTypeCardProps) {
+export function TreatmentTypeCard({ copy, selected, onSelect }: TreatmentTypeCardProps) {
   const swatch = SWATCH[copy.id];
+  const stripeDirection = swatch.pattern === "vertical" ? "90deg" : "0deg";
 
   return (
     <button
@@ -33,7 +40,7 @@ export function CurtainTypeCard({ copy, selected, onSelect }: CurtainTypeCardPro
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: `repeating-linear-gradient(90deg, rgba(0,0,0,${swatch.foldOpacity}) 0 2px, transparent 2px 18px)`,
+            backgroundImage: `repeating-linear-gradient(${stripeDirection}, rgba(0,0,0,${swatch.lineOpacity}) 0 2px, transparent 2px ${swatch.spacingPx}px)`,
           }}
         />
       </div>

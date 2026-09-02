@@ -49,32 +49,32 @@ src/
     globals.css                # Design tokens (color, no dark mode — see §5)
     api/
       analyze/route.ts        # POST: photo -> RoomAnalysis
-      generate/route.ts       # POST: photo + RoomAnalysis + curtainType -> image
+      generate/route.ts       # POST: photo + RoomAnalysis + treatmentType + state -> image
   components/                 # Presentational + the Visualizer state machine
     Visualizer.tsx             # Orchestrates upload -> analyze -> select -> generate
     UploadDropzone.tsx
-    CurtainTypeSelector.tsx / CurtainTypeCard.tsx
+    TreatmentSelector.tsx / TreatmentTypeCard.tsx
     BeforeAfterSlider.tsx
-    ResultTabs.tsx
+    ResultTabs.tsx             # Tabs per treatment type + an open/closed state toggle
     LoadingState.tsx / ErrorState.tsx
     Header.tsx / CTASection.tsx / PrivacyNotice.tsx
   lib/
     ai/
       types.ts                 # AIProvider interface, RoomAnalysis, etc.
       provider.ts               # getAIProvider() factory (reads AI_PROVIDER env var)
-      prompts.ts                 # Analysis + edit prompt builders
+      prompts.ts                 # Analysis + edit prompt builders (state + family aware)
       providers/
         gemini.ts                 # Default provider
         openai.ts                  # Alternate provider
         mock.ts                     # No-network provider (see §3)
-    curtains.ts                 # The 3 curtain types as Product records + fabric physics
-    validation.ts                 # File type/size + curtainType validation
+    treatments.ts                # All treatment types as Product records + fabric/slat physics
+    validation.ts                 # File type/size + treatmentType/state validation
     rateLimit.ts                   # In-memory per-IP rate limiting
     analytics.ts                    # Structured event logging (§6)
     image-client.ts                  # Client-side downscale/re-encode before upload
   types/
     product.ts                  # Product data model (§7 — built for Phase 2 from day 1)
-    visualizer.ts                 # Client-only UI state types
+    visualizer.ts                 # Client-only UI state types (ResultsMap keyed by type + state)
 ```
 
 ## 2. Core principle, enforced in the prompt layer
@@ -88,10 +88,12 @@ This is implemented in `src/lib/ai/prompts.ts::buildEditPrompt`, which:
 - Lists every detected window with its normalized bounding box, whether it already has
   curtains (replace vs. add), what furniture occludes it (must stay in front of the new
   curtain), and where the floor line is (curtain drop length).
-- Describes the chosen curtain type's **physical fabric properties** (light
-  transmission, weight, fold structure — see `src/lib/curtains.ts`), not just a color,
-  so blackout is a genuinely different material rendering, not a darker semi-transparent
-  curtain (brief §6).
+- Describes the chosen treatment's **physical properties per open/closed state** (light
+  transmission, weight, fold structure for curtains; slat width, tilt, wood grain for
+  blinds — see `src/lib/treatments.ts`), not just a color, so e.g. blackout is a
+  genuinely different material rendering than a darker semi-transparent curtain, and a
+  closed blind is a different rendering than an open one, not a re-tinted duplicate
+  (brief §6).
 - Explicitly instructs the model to preserve everything else pixel-for-pixel where
   possible: furniture, floor, walls, ceiling, people/pets, camera angle.
 
@@ -138,14 +140,12 @@ as a warning) so it always boots — useful for local frontend work, demos, and 
 without needing a paid key. The mock returns the original photo with an on-screen note
 explaining it's demo mode; it never fabricates a fake edit.
 
-**No billing account at all?** `AI_PROVIDER=huggingface` is a fourth, experimental
-option: analysis still runs on Gemini's genuinely free text/vision quota, but
-generation is routed to a free Hugging Face-hosted open model
-(`timbrooks/instruct-pix2pix`) instead of Gemini's or OpenAI's paid image models. No
-card required (`HF_API_TOKEN` from huggingface.co is free). Quality and scene
-preservation are noticeably weaker than the paid providers, and the shared free
-inference API can 503 while a model "warms up" (this provider retries once). Treat it
-as a way to demo a real, if rougher, AI edit at zero cost — not as production-ready.
+**No billing account at all?** Gemini's text/vision analysis endpoint has a genuine
+free quota, but every image-generation provider evaluated (Gemini, OpenAI, and a
+Hugging Face-hosted open model tried during development) requires a funded/billed
+account — none of them offer free image generation as of this writing. `MockProvider`
+above is the only zero-cost way to exercise the full flow; a real visualization
+currently requires a paid provider.
 
 ## 4. Risks & known limitations (MVP)
 
@@ -198,13 +198,18 @@ as a way to demo a real, if rougher, AI edit at zero cost — not as production-
 ## 7. Roadmap (Phase 2, architected for but not built)
 
 The `Product` model (`src/types/product.ts`) already has `collection`, `fabric`,
-`color`, `texture`, `pattern`, `metadata` — the three MVP curtain "types" are just
-three seeded `Product` rows (`src/lib/curtains.ts`). Phase 2 is additive:
+`color`, `texture`, `pattern`, `metadata`, and a `family`/`category` split — the MVP's
+six treatment "types" (3 curtain fabrics × transparency, 3 wooden blind slat widths)
+are just six seeded `Product` rows (`src/lib/treatments.ts`), each rendered in both an
+open and a closed state. Adding a second product family (curtains → wooden blinds) and
+a second dimension (open/closed) after the fact, without touching the pipeline or the
+provider interface, was itself a test of this extensibility — Phase 2 continues in the
+same direction:
 
-1. Replace the 3 static cards with a real collection browser (fabric → color →
-   structure), each still resolving to a `Product` that flows into the existing
+1. Replace the static cards per family with a real collection browser (fabric/slat →
+   color → structure), each still resolving to a `Product` that flows into the existing
    `generateVisualization({ product, ... })` parameter — already wired, currently only
-   used to override the default fabric name/color in the prompt.
+   used to override the default fabric/material name and color in the prompt.
 2. Swap the semantic-mask approach for a true pixel mask (segmentation model, e.g. SAM,
    feeding a dedicated inpainting model) if cluttered-room occlusion accuracy needs to
    improve beyond what prompting achieves.

@@ -1,14 +1,27 @@
 /**
  * Product model.
  *
- * The MVP only ships three curtain "categories" (transparent / semi-transparent /
- * blackout), but the visualizer is built against this richer model from day one
- * so Phase 2 (real Copahome collection: fabric, color, pattern per SKU) is
- * additive — new Product rows and a picker UI — rather than a rewrite of the
- * AI pipeline, which already accepts a Product.
+ * The MVP ships two window-treatment families — curtains (transparent /
+ * semi-transparent / blackout) and wooden blinds (35mm / 50mm / 63mm slats)
+ * — as a deliberate test of the extensibility this model was built for from
+ * day one: adding a family or a specific SKU is new `Product` rows plus a
+ * `TreatmentTypeId`/prompt entry, not a rewrite of the AI pipeline or UI,
+ * which are both keyed off `TreatmentTypeId` rather than hardcoded to
+ * curtains.
  */
 
-export type CurtainTypeId = "transparent" | "semi_transparent" | "blackout";
+export type TreatmentFamily = "curtain" | "wooden_blind";
+
+export type TreatmentTypeId =
+  | "transparent"
+  | "semi_transparent"
+  | "blackout"
+  | "wooden_blind_35mm"
+  | "wooden_blind_50mm"
+  | "wooden_blind_63mm";
+
+/** Whether the treatment is shown drawn/tilted open (window visible) or closed (window covered). */
+export type TreatmentState = "closed" | "open";
 
 export type TransparencyLevel = "high" | "medium" | "low";
 
@@ -16,10 +29,15 @@ export interface Product {
   id: string;
   name: string;
   collection: string;
-  category: CurtainTypeId;
-  transparency: TransparencyLevel;
+  family: TreatmentFamily;
+  category: TreatmentTypeId;
   color: string;
-  fabric: string;
+  /** Curtain-family only. */
+  transparency?: TransparencyLevel;
+  fabric?: string;
+  /** Wooden blind-family only. */
+  slatWidthMm?: number;
+  material?: string;
   image?: string;
   texture?: string;
   pattern?: string;

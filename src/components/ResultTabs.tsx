@@ -1,19 +1,22 @@
-import { CURTAIN_TYPE_COPY } from "@/lib/curtains";
-import type { CurtainTypeId } from "@/types/product";
+import { TREATMENT_COPY, TREATMENT_FAMILIES } from "@/lib/treatments";
+import type { TreatmentState, TreatmentTypeId } from "@/types/product";
 import type { ActiveTab, ResultsMap } from "@/types/visualizer";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
 import { ErrorState } from "./ErrorState";
 import { LoadingState } from "./LoadingState";
 
-const CURTAIN_ORDER: CurtainTypeId[] = ["transparent", "semi_transparent", "blackout"];
-const GENERATE_MESSAGES = ["We plaatsen jouw gordijnen...", "Bijna klaar..."];
+const TREATMENT_ORDER: TreatmentTypeId[] = TREATMENT_FAMILIES.flatMap((f) => f.types);
+const GENERATE_MESSAGES = ["We plaatsen jouw raamdecoratie...", "Bijna klaar..."];
+const STATE_LABEL: Record<TreatmentState, string> = { closed: "Toe", open: "Open" };
 
 interface ResultTabsProps {
   originalDataUrl: string;
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
+  activeState: TreatmentState;
+  onStateChange: (state: TreatmentState) => void;
   results: ResultsMap;
-  onGenerate: (type: CurtainTypeId) => void;
+  onGenerate: (type: TreatmentTypeId, state: TreatmentState) => void;
   onDownload: (dataUrl: string, filename: string) => void;
   onShare?: (dataUrl: string, filename: string) => void;
   canShare?: boolean;
@@ -23,6 +26,8 @@ export function ResultTabs({
   originalDataUrl,
   activeTab,
   onTabChange,
+  activeState,
+  onStateChange,
   results,
   onGenerate,
   onDownload,
@@ -33,16 +38,36 @@ export function ResultTabs({
     <div className="w-full space-y-4">
       <div className="flex flex-wrap gap-2">
         <TabButton active={activeTab === "original"} onClick={() => onTabChange("original")} label="Origineel" />
-        {CURTAIN_ORDER.map((id) => (
+        {TREATMENT_ORDER.map((id) => (
           <TabButton
             key={id}
             active={activeTab === id}
             onClick={() => onTabChange(id)}
-            label={CURTAIN_TYPE_COPY[id].label}
-            status={results[id]?.status}
+            label={TREATMENT_COPY[id].label}
+            status={results[id]?.[activeState]?.status}
           />
         ))}
       </div>
+
+      {activeTab !== "original" ? (
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted">Stand:</span>
+          <div className="inline-flex rounded-full border border-border p-1">
+            {(["closed", "open"] as TreatmentState[]).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => onStateChange(s)}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  activeState === s ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"
+                }`}
+              >
+                {STATE_LABEL[s]}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {activeTab === "original" ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -52,9 +77,10 @@ export function ResultTabs({
           className="aspect-[4/3] w-full rounded-2xl border border-border object-cover"
         />
       ) : (
-        <CurtainResultPanel
-          curtainType={activeTab}
-          entry={results[activeTab]}
+        <TreatmentResultPanel
+          treatmentType={activeTab}
+          state={activeState}
+          entry={results[activeTab]?.[activeState]}
           originalDataUrl={originalDataUrl}
           onGenerate={onGenerate}
           onDownload={onDownload}
@@ -75,7 +101,7 @@ function TabButton({
   active: boolean;
   onClick: () => void;
   label: string;
-  status?: ResultsMap[CurtainTypeId]["status"];
+  status?: ResultsMap[TreatmentTypeId][TreatmentState]["status"];
 }) {
   return (
     <button
@@ -92,8 +118,9 @@ function TabButton({
   );
 }
 
-function CurtainResultPanel({
-  curtainType,
+function TreatmentResultPanel({
+  treatmentType,
+  state,
   entry,
   originalDataUrl,
   onGenerate,
@@ -101,16 +128,17 @@ function CurtainResultPanel({
   onShare,
   canShare,
 }: {
-  curtainType: CurtainTypeId;
-  entry: ResultsMap[CurtainTypeId] | undefined;
+  treatmentType: TreatmentTypeId;
+  state: TreatmentState;
+  entry: ResultsMap[TreatmentTypeId][TreatmentState] | undefined;
   originalDataUrl: string;
-  onGenerate: (type: CurtainTypeId) => void;
+  onGenerate: (type: TreatmentTypeId, state: TreatmentState) => void;
   onDownload: (dataUrl: string, filename: string) => void;
   onShare?: (dataUrl: string, filename: string) => void;
   canShare?: boolean;
 }) {
   const status = entry?.status ?? "idle";
-  const copy = CURTAIN_TYPE_COPY[curtainType];
+  const copy = TREATMENT_COPY[treatmentType];
 
   if (status === "loading") {
     return <LoadingState messages={GENERATE_MESSAGES} />;
@@ -120,7 +148,7 @@ function CurtainResultPanel({
     return (
       <ErrorState
         message={entry?.errorMessage ?? "Er ging iets mis bij het genereren van deze visualisatie."}
-        onRetry={() => onGenerate(curtainType)}
+        onRetry={() => onGenerate(treatmentType, state)}
       />
     );
   }
@@ -138,7 +166,7 @@ function CurtainResultPanel({
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => onDownload(entry.imageDataUrl!, `copahome-${curtainType}.png`)}
+            onClick={() => onDownload(entry.imageDataUrl!, `copahome-${treatmentType}-${state}.png`)}
             className="rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent"
           >
             Download visualisatie
@@ -146,7 +174,7 @@ function CurtainResultPanel({
           {canShare && onShare ? (
             <button
               type="button"
-              onClick={() => onShare(entry.imageDataUrl!, `copahome-${curtainType}.png`)}
+              onClick={() => onShare(entry.imageDataUrl!, `copahome-${treatmentType}-${state}.png`)}
               className="rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent"
             >
               Delen
@@ -159,11 +187,13 @@ function CurtainResultPanel({
 
   return (
     <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-surface px-6 py-12 text-center sm:min-h-[360px]">
-      <p className="font-display text-lg">{copy.label}</p>
+      <p className="font-display text-lg">
+        {copy.label} — {STATE_LABEL[state]}
+      </p>
       <p className="max-w-sm text-sm text-muted">{copy.description}</p>
       <button
         type="button"
-        onClick={() => onGenerate(curtainType)}
+        onClick={() => onGenerate(treatmentType, state)}
         className="rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-colors hover:bg-accent"
       >
         Genereer visualisatie
