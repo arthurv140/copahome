@@ -19,9 +19,13 @@ export const PRODUCTS: Product[] = [
     family: "curtain",
     category: "semi_transparent",
     transparency: "medium",
-    color: "Warm zandbeige/taupe",
+    color: "Warm beige/taupe",
+    // Product-authored AI reference description (kept in English, matching the
+    // rest of the edit prompt) — supersedes an earlier guess made from the
+    // sample photo alone (which incorrectly assumed a visible lurex sparkle
+    // thread; the actual fabric is matte with very low sheen).
     fabric:
-      "Grof, onregelmatig losgeweven stof (knit-achtige structuur, geen strak geweven linnen) met duidelijk zichtbare, ongelijke open gaatjes in de weving waar fel licht doorheen schijnt — sommige zones dichter geweven, andere zeer open/doorschijnend. Door de hele stof loopt een fijne, subtiel glinsterende/metallic garenslof (lurex) die oplicht tegen invallend licht. Franjerand aan de onderzijde zichtbaar. Draperie valt zwaar/zwierig, geen strakke plooien maar losse, organische golving.",
+      "ELITE curtain fabric — preserve the exact visual characteristics of the reference fabric. A premium, natural-look woven curtain fabric in a warm neutral beige/taupe colour. Fine, dense micro-weave with a clearly visible open textile structure. Subtle irregularity in the yarn gives the fabric an authentic natural and linen-inspired appearance. Matte surface, very low sheen, soft tactile appearance. Lightweight and flexible construction with an elegant, fluid drape and natural vertical folds. Semi-transparent / light-filtering fabric: daylight passes through the fabric softly, creating a gentle diffused glow. Objects and silhouettes behind the curtain remain partially visible but blurred and softened. The fabric provides privacy through visual diffusion rather than opacity. The weave must remain realistic and consistent across the entire curtain. Preserve the warm beige/taupe colour and natural tonal variation. The fabric should look like a real high-quality architectural interior textile, not a digital texture. Do not make the fabric thicker, heavier, darker or more opaque than the reference. Do not introduce patterns, stripes, embroidery or decorative motifs. No satin sheen, no velvet effect, no blackout appearance, no plastic texture, no artificial smoothness. The final curtain must behave physically like a lightweight woven textile: soft folds, natural gravity, realistic tension and realistic light transmission.",
   },
   {
     id: "copahome-bologna",
