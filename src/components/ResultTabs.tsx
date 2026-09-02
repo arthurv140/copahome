@@ -63,7 +63,9 @@ export function ResultTabs({
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
           {productsForActiveTab.length > 1 ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs uppercase tracking-[0.15em] text-muted">Fabric</span>
+              <span className="text-xs uppercase tracking-[0.15em] text-muted">
+                {TREATMENT_COPY[activeTab].family === "wooden_blind" ? "Color" : "Fabric"}
+              </span>
               <div className="inline-flex gap-1 rounded-full bg-foreground/[0.04] p-1">
                 {productsForActiveTab.map((p) => (
                   <button

@@ -72,37 +72,56 @@ export const PRODUCTS: Product[] = [
     color: "Anthracite",
     fabric: "Weighted blackout fabric",
   },
-  {
-    id: "copahome-houten-jaloezie-35mm-default",
-    name: "Wooden blind 35mm",
-    collection: "Copahome Essentials",
-    family: "wooden_blind",
-    category: "wooden_blind_35mm",
-    slatWidthMm: 35,
-    color: "Natural oak",
-    material: "Solid wood",
-  },
-  {
-    id: "copahome-houten-jaloezie-50mm-default",
-    name: "Wooden blind 50mm",
-    collection: "Copahome Essentials",
-    family: "wooden_blind",
-    category: "wooden_blind_50mm",
-    slatWidthMm: 50,
-    color: "Natural oak",
-    material: "Solid wood",
-  },
-  {
-    id: "copahome-houten-jaloezie-63mm-default",
-    name: "Wooden blind 63mm",
-    collection: "Copahome Essentials",
-    family: "wooden_blind",
-    category: "wooden_blind_63mm",
-    slatWidthMm: 63,
-    color: "Natural oak",
-    material: "Solid wood",
-  },
+  ...woodenBlindColorProducts(35, "wooden_blind_35mm"),
+  ...woodenBlindColorProducts(50, "wooden_blind_50mm"),
+  ...woodenBlindColorProducts(63, "wooden_blind_63mm"),
 ];
+
+/**
+ * One-tap colour variants for a wooden blind width — Natural (the current
+ * default sample), White, Dark brown and Black. Natural is listed first so
+ * it stays the default selection (`getDefaultProduct` picks the first match
+ * per category).
+ */
+function woodenBlindColorProducts(widthMm: number, category: TreatmentTypeId): Product[] {
+  const base = {
+    collection: "Copahome Essentials",
+    family: "wooden_blind" as const,
+    category,
+    slatWidthMm: widthMm,
+  };
+  return [
+    {
+      ...base,
+      id: `copahome-blind-${widthMm}mm-natural`,
+      name: "Natural",
+      color:
+        "Natural oak — warm honey-toned wood grain, clearly visible natural grain lines, satin varnish finish.",
+      material: "Solid wood",
+    },
+    {
+      ...base,
+      id: `copahome-blind-${widthMm}mm-white`,
+      name: "White",
+      color: "Bright white painted finish — smooth matte-to-satin painted wood, no visible natural wood grain.",
+      material: "Solid wood, painted",
+    },
+    {
+      ...base,
+      id: `copahome-blind-${widthMm}mm-dark-brown`,
+      name: "Dark brown",
+      color: "Deep dark brown/walnut stained wood — rich espresso tone with subtle visible wood grain.",
+      material: "Solid wood, stained",
+    },
+    {
+      ...base,
+      id: `copahome-blind-${widthMm}mm-black`,
+      name: "Black",
+      color: "Matte black painted finish — uniform deep black, no visible wood grain, subtle matte sheen.",
+      material: "Solid wood, painted",
+    },
+  ];
+}
 
 export function getProductsForType(type: TreatmentTypeId): Product[] {
   return PRODUCTS.filter((p) => p.category === type);

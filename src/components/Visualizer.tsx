@@ -61,6 +61,24 @@ export function Visualizer() {
     return selectedProductByType[type] ?? getDefaultProduct(type).id;
   }
 
+  /** Kicks off generation for a type/state combo only if it hasn't been generated (or isn't already in flight). */
+  function ensureGenerated(type: TreatmentTypeId, state: TreatmentState) {
+    const status = results[type]?.[state]?.status ?? "idle";
+    if (status === "idle") {
+      generateFor(type, state);
+    }
+  }
+
+  function handleTabChange(tab: ActiveTab) {
+    setActiveTab(tab);
+    if (tab !== "original") ensureGenerated(tab, activeState);
+  }
+
+  function handleStateChange(state: TreatmentState) {
+    setActiveState(state);
+    if (activeTab !== "original") ensureGenerated(activeTab, state);
+  }
+
   function handleProductChange(type: TreatmentTypeId, productId: string) {
     setSelectedProductByType((prev) => ({ ...prev, [type]: productId }));
     // The cached result(s) for this type no longer match the newly chosen fabric.
@@ -68,6 +86,11 @@ export function Visualizer() {
       ...prev,
       [type]: { closed: { status: "idle" }, open: { status: "idle" } },
     }));
+    // Switching fabric/colour should feel instant, not require an extra click — regenerate
+    // the view the customer is currently looking at right away, with the new choice.
+    if (type === activeTab) {
+      generateFor(type, activeState, productId);
+    }
   }
 
   async function runAnalysis(image: PreparedImage) {
@@ -83,7 +106,7 @@ export function Visualizer() {
 
       if (!res.ok) {
         setAnalysisError({
-          message: data.error ?? "Er ging iets mis bij het analyseren van de foto.",
+          message: data.error ?? "Something went wrong while analysing the photo.",
           tips: data.tips,
           kind: res.status === 422 ? "no_window" : "other",
         });
@@ -95,7 +118,7 @@ export function Visualizer() {
       setFlowState("select");
     } catch {
       setAnalysisError({
-        message: "Er ging iets mis. Controleer je internetverbinding en probeer opnieuw.",
+        message: "Something went wrong. Check your internet connection and try again.",
         kind: "other",
       });
       setFlowState("analysis_error");
@@ -114,15 +137,16 @@ export function Visualizer() {
       await runAnalysis(prepared);
     } catch {
       setAnalysisError({
-        message: "Deze foto kon niet worden verwerkt. Probeer een ander bestand.",
+        message: "This photo could not be processed. Please try a different file.",
         kind: "other",
       });
       setFlowState("analysis_error");
     }
   }
 
-  async function generateFor(treatmentType: TreatmentTypeId, state: TreatmentState) {
+  async function generateFor(treatmentType: TreatmentTypeId, state: TreatmentState, productIdOverride?: string) {
     if (!photo || !analysis) return;
+    const productId = productIdOverride ?? getActiveProductId(treatmentType);
 
     setResults((prev) => ({
       ...prev,
@@ -141,7 +165,7 @@ export function Visualizer() {
           imageBase64: photo.base64,
           treatmentType,
           state,
-          productId: getActiveProductId(treatmentType),
+          productId,
           analysis,
         }),
       });
@@ -154,7 +178,7 @@ export function Visualizer() {
             ...prev[treatmentType],
             [state]: {
               status: "error",
-              errorMessage: data.error ?? "Er ging iets mis bij het genereren van deze visualisatie.",
+              errorMessage: data.error ?? "Something went wrong while generating this visualisation.",
             },
           },
         }));
@@ -174,7 +198,7 @@ export function Visualizer() {
         ...prev,
         [treatmentType]: {
           ...prev[treatmentType],
-          [state]: { status: "error", errorMessage: "Netwerkfout. Probeer opnieuw." },
+          [state]: { status: "error", errorMessage: "Network error. Please try again." },
         },
       }));
     }
@@ -293,9 +317,9 @@ export function Visualizer() {
           <ResultTabs
             originalDataUrl={photo.dataUrl}
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
             activeState={activeState}
-            onStateChange={setActiveState}
+            onStateChange={handleStateChange}
             selectedProductId={activeTab !== "original" ? getActiveProductId(activeTab) : ""}
             onProductChange={(productId) => activeTab !== "original" && handleProductChange(activeTab, productId)}
             results={results}
