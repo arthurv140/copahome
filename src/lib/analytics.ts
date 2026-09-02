@@ -15,7 +15,7 @@ export type AnalyticsEvent =
   | { type: "analysis_failed"; reason: string }
   | { type: "visualization_generated"; treatmentType: TreatmentTypeId }
   | { type: "visualization_failed"; treatmentType: TreatmentTypeId; reason: string }
-  | { type: "cta_clicked"; cta: "collection" | "advice" | "sample_request" };
+  | { type: "cta_clicked"; cta: "collection" | "advice" | "sample_request" | "quote_request" };
 
 export function trackEvent(event: AnalyticsEvent): void {
   try {

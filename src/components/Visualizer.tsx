@@ -6,11 +6,15 @@ import type { RoomAnalysis } from "@/lib/ai/types";
 import { getDefaultProduct, TREATMENT_FAMILIES } from "@/lib/treatments";
 import type { TreatmentState, TreatmentTypeId } from "@/types/product";
 import type { ActiveTab, ResultsMap } from "@/types/visualizer";
+import { CTASection } from "./CTASection";
 import { ErrorState } from "./ErrorState";
-import { LoadingState } from "./LoadingState";
+import { InlineLoadingState } from "./LoadingState";
+import { PrivacyNotice } from "./PrivacyNotice";
 import { ResultTabs } from "./ResultTabs";
 import { TreatmentSelector } from "./TreatmentSelector";
 import { UploadDropzone } from "./UploadDropzone";
+
+const ANALYZING_MESSAGES = ["Analysing your interior", "Identifying your windows"];
 
 type FlowState = "upload" | "analyzing" | "analysis_error" | "select" | "result";
 
@@ -211,66 +215,97 @@ export function Visualizer() {
     }
   }
 
+  const hasDoneResult = Object.values(results).some((byState) =>
+    Object.values(byState).some((entry) => entry.status === "done"),
+  );
+
   if (flowState === "upload") {
-    return <UploadDropzone onFileSelected={handleFileSelected} />;
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-10 text-center">
+        <div className="animate-fade-up space-y-5">
+          <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted">AI Curtain Visualizer</p>
+          <h1 className="text-5xl font-medium leading-[1.05] tracking-tight sm:text-7xl">
+            See your space differently.
+          </h1>
+          <p className="mx-auto max-w-lg text-lg leading-relaxed text-muted sm:text-xl">
+            Visualise Copahome curtains in your own interior with AI.
+          </p>
+        </div>
+        <div className="w-full animate-fade-up" style={{ animationDelay: "0.1s" }}>
+          <UploadDropzone onFileSelected={handleFileSelected} />
+        </div>
+        <PrivacyNotice />
+      </div>
+    );
   }
 
   return (
-    <div className="w-full space-y-8">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted">Interieurfoto geladen</p>
-        <button type="button" onClick={handleReset} className="text-sm font-medium underline decoration-border underline-offset-4 hover:text-accent">
-          Andere foto uploaden
+    <div className="mx-auto w-full max-w-5xl space-y-10">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleReset}
+          className="text-xs font-medium text-muted underline decoration-muted/40 underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground"
+        >
+          Upload another photo
         </button>
       </div>
 
-      {flowState === "analyzing" ? <LoadingState messages={["We analyseren jouw interieur..."]} /> : null}
-
-      {flowState === "analysis_error" && analysisError ? (
-        <ErrorState
-          message={analysisError.message}
-          tips={analysisError.tips}
-          retryLabel={analysisError.kind === "no_window" ? "Andere foto uploaden" : "Probeer opnieuw"}
-          onRetry={() => (analysisError.kind === "no_window" ? handleReset() : photo && runAnalysis(photo))}
-        />
-      ) : null}
-
-      {flowState === "select" && photo ? (
-        <div className="space-y-8">
+      {photo && flowState !== "result" ? (
+        <div className="animate-fade-up space-y-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={photo.dataUrl}
-            alt="Geüploade interieurfoto"
-            className="aspect-[4/3] w-full rounded-2xl border border-border object-cover"
+            alt="Your uploaded interior photo"
+            className="aspect-[4/3] w-full rounded-[28px] object-cover shadow-[0_40px_80px_-40px_rgba(27,26,23,0.25)]"
           />
-          <h2 className="font-display text-2xl">Kies jouw raamdecoratie</h2>
-          <TreatmentSelector selected={selectedType} onSelect={setSelectedType} />
-          <button
-            type="button"
-            disabled={!selectedType}
-            onClick={() => selectedType && generateFor(selectedType, "closed")}
-            className="w-full rounded-full bg-foreground px-7 py-3.5 text-xs font-medium uppercase tracking-[0.2em] text-background transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
-          >
-            Genereer visualisatie
-          </button>
+
+          {flowState === "analyzing" ? <InlineLoadingState messages={ANALYZING_MESSAGES} /> : null}
+
+          {flowState === "analysis_error" && analysisError ? (
+            <ErrorState
+              message={analysisError.message}
+              tips={analysisError.tips}
+              retryLabel={analysisError.kind === "no_window" ? "Upload another photo" : "Try again"}
+              onRetry={() => (analysisError.kind === "no_window" ? handleReset() : photo && runAnalysis(photo))}
+            />
+          ) : null}
+
+          {flowState === "select" ? (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-medium tracking-tight sm:text-3xl">Choose your treatment</h2>
+              <TreatmentSelector selected={selectedType} onSelect={setSelectedType} />
+              <button
+                type="button"
+                disabled={!selectedType}
+                onClick={() => selectedType && generateFor(selectedType, "closed")}
+                className="w-full rounded-full bg-foreground px-8 py-4 text-sm font-medium text-background transition-transform duration-300 hover:scale-[1.01] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-30 sm:w-auto"
+              >
+                Generate visualisation
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
       {flowState === "result" && photo ? (
-        <ResultTabs
-          originalDataUrl={photo.dataUrl}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          activeState={activeState}
-          onStateChange={setActiveState}
-          selectedProductId={activeTab !== "original" ? getActiveProductId(activeTab) : ""}
-          onProductChange={(productId) => activeTab !== "original" && handleProductChange(activeTab, productId)}
-          results={results}
-          onGenerate={generateFor}
-          onDownload={handleDownload}
-          onShare={handleShare}
-          canShare={canShare}
-        />
+        <div className="space-y-16">
+          <ResultTabs
+            originalDataUrl={photo.dataUrl}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            activeState={activeState}
+            onStateChange={setActiveState}
+            selectedProductId={activeTab !== "original" ? getActiveProductId(activeTab) : ""}
+            onProductChange={(productId) => activeTab !== "original" && handleProductChange(activeTab, productId)}
+            results={results}
+            onGenerate={generateFor}
+            onDownload={handleDownload}
+            onShare={handleShare}
+            canShare={canShare}
+          />
+          {hasDoneResult ? <CTASection /> : null}
+        </div>
       ) : null}
     </div>
   );

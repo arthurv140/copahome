@@ -1,28 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
-  --background: #15120e;
-  --surface: #fefcf9;
-  --foreground: #f1e9db;
-  --surface-foreground: #1c1815;
-  --muted: #a89c89;
-  --border: #e7e0d3;
-  --accent: #b8632f;
-  --accent-foreground: #fefcf9;
+  color-scheme: light;
+  --background: #f6f4ef;
+  --surface: #ffffff;
+  --foreground: #1b1a17;
+  --muted: #857f76;
+  --border: #e7e2d8;
+  --accent: #6f5a44;
+  --accent-foreground: #f6f4ef;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);
-  --color-surface-foreground: var(--surface-foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --font-sans: var(--font-jost);
-  --font-display: var(--font-cormorant);
+  --font-sans: var(--font-manrope);
 }
 
 html {
@@ -37,4 +34,47 @@ body {
 ::selection {
   background: var(--accent);
   color: var(--accent-foreground);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

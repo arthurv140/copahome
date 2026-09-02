@@ -32,31 +32,31 @@ export function estimateBase64Bytes(base64: string): number {
 
 export function validateImagePayload(mimeType: unknown, imageBase64: unknown): { mimeType: string; imageBase64: string } {
   if (typeof mimeType !== "string" || !ALLOWED_IMAGE_MIME_TYPES.includes(mimeType as (typeof ALLOWED_IMAGE_MIME_TYPES)[number])) {
-    throw new ValidationError("Ongeldig bestandstype. Gebruik JPG, PNG of WebP.");
+    throw new ValidationError("Unsupported file type. Please use JPG, PNG or WebP.");
   }
   if (typeof imageBase64 !== "string" || imageBase64.length === 0) {
-    throw new ValidationError("Geen afbeelding ontvangen.");
+    throw new ValidationError("No image received.");
   }
   // Basic sanity check that this looks like base64 (not a data: URL, no stray whitespace).
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(imageBase64)) {
-    throw new ValidationError("De afbeelding kon niet gelezen worden.");
+    throw new ValidationError("The image could not be read.");
   }
   if (estimateBase64Bytes(imageBase64) > MAX_IMAGE_BYTES) {
-    throw new ValidationError("De afbeelding is te groot. Probeer een kleinere foto (max. ~12MB).");
+    throw new ValidationError("The image is too large. Please try a smaller photo (max. ~12MB).");
   }
   return { mimeType, imageBase64 };
 }
 
 export function validateTreatmentType(value: unknown): TreatmentTypeId {
   if (typeof value !== "string" || !ALLOWED_TREATMENT_TYPES.includes(value as TreatmentTypeId)) {
-    throw new ValidationError("Ongeldig type raamdecoratie.");
+    throw new ValidationError("Invalid window treatment type.");
   }
   return value as TreatmentTypeId;
 }
 
 export function validateTreatmentState(value: unknown): TreatmentState {
   if (typeof value !== "string" || !ALLOWED_TREATMENT_STATES.includes(value as TreatmentState)) {
-    throw new ValidationError("Ongeldige stand (open/toe).");
+    throw new ValidationError("Invalid position (open/closed).");
   }
   return value as TreatmentState;
 }
@@ -71,11 +71,11 @@ export function validateTreatmentState(value: unknown): TreatmentState {
 export function validateProductId(value: unknown, treatmentType: TreatmentTypeId): Product | undefined {
   if (value === undefined || value === null) return undefined;
   if (typeof value !== "string") {
-    throw new ValidationError("Ongeldige stofkeuze.");
+    throw new ValidationError("Invalid fabric choice.");
   }
   const product = getProductById(value);
   if (!product || product.category !== treatmentType) {
-    throw new ValidationError("Ongeldige stofkeuze.");
+    throw new ValidationError("Invalid fabric choice.");
   }
   return product;
 }

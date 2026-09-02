@@ -46,7 +46,7 @@ export class MockProvider implements AIProvider {
       imageBase64: params.imageBase64,
       mimeType: params.mimeType,
       providerNotes:
-        "Demo-modus: geen AI-provider geconfigureerd, dus de originele foto wordt getoond. Stel AI_PROVIDER en de bijhorende API key in om echte visualisaties te genereren (zie README).",
+        "No AI provider is configured, so the original photo is shown. Set AI_PROVIDER and its API key to generate real visualisations (see README).",
     };
   }
 }

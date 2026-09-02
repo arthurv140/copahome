@@ -2,52 +2,56 @@
 
 import { useEffect, useState } from "react";
 
-interface LoadingStateProps {
-  messages: string[];
-}
-
-/**
- * Rotates through status messages on a timer. Deliberately does not show a
- * percentage — we don't have real progress data from the AI provider calls,
- * and a fake progress bar would be misleading (brief section 19).
- */
-export function LoadingState({ messages }: LoadingStateProps) {
+function useRotatingMessage(messages: string[], intervalMs = 2200): string {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
     if (messages.length <= 1) return;
-    const interval = setInterval(() => {
-      setIndex((i) => (i + 1) % messages.length);
-    }, 2400);
+    const interval = setInterval(() => setIndex((i) => (i + 1) % messages.length), intervalMs);
     return () => clearInterval(interval);
     // Only the message count matters for the interval; `messages` is often a
     // fresh array literal from the caller, which would otherwise re-run this
     // every render.
-  }, [messages.length]);
+  }, [messages.length, intervalMs]);
 
-  const message = messages[index % messages.length] ?? messages[0];
+  return messages[index % messages.length] ?? messages[0];
+}
 
+interface LoadingStateProps {
+  messages: string[];
+}
+
+/** Full-size loading block, shown in place of the result panel while a visualisation is generating. */
+export function LoadingState({ messages }: LoadingStateProps) {
+  const message = useRotatingMessage(messages);
   return (
-    <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-5 rounded-2xl border border-border bg-surface px-6 py-12 text-center text-surface-foreground sm:min-h-[360px]">
-      <div className="flex gap-1.5">
-        {[0, 1, 2].map((dot) => (
-          <span
-            key={dot}
-            className="h-2 w-2 rounded-full bg-accent"
-            style={{
-              animation: "copahome-pulse 1.2s ease-in-out infinite",
-              animationDelay: `${dot * 0.15}s`,
-            }}
-          />
-        ))}
-      </div>
-      <p className="font-display text-lg">{message}</p>
-      <style>{`
-        @keyframes copahome-pulse {
-          0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); }
-          40% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
+    <div className="flex min-h-[420px] w-full flex-col items-center justify-center gap-7 sm:min-h-[520px]">
+      <Spinner className="h-11 w-11" />
+      <p key={message} className="animate-fade-in text-lg font-medium tracking-tight sm:text-xl">
+        {message}
+      </p>
+    </div>
+  );
+}
+
+/** Compact inline variant shown underneath the uploaded photo while it's being analysed. */
+export function InlineLoadingState({ messages }: LoadingStateProps) {
+  const message = useRotatingMessage(messages);
+  return (
+    <div className="flex items-center justify-center gap-3 py-1">
+      <Spinner className="h-4 w-4" />
+      <p key={message} className="animate-fade-in text-sm font-medium text-muted">
+        {message}
+      </p>
+    </div>
+  );
+}
+
+function Spinner({ className }: { className: string }) {
+  return (
+    <div className={`relative ${className}`}>
+      <span className="absolute inset-0 rounded-full border border-foreground/15" />
+      <span className="absolute inset-0 animate-spin rounded-full border-t border-foreground/70 [animation-duration:1.2s]" />
     </div>
   );
 }

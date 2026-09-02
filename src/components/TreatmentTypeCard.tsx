@@ -29,43 +29,39 @@ export function TreatmentTypeCard({ copy, selected, onSelect }: TreatmentTypeCar
       type="button"
       onClick={() => onSelect(copy.id)}
       aria-pressed={selected}
-      className={`flex flex-col items-start gap-4 rounded-2xl border bg-surface p-5 text-left text-surface-foreground transition-all ${
-        selected ? "border-accent shadow-sm ring-1 ring-accent/25" : "border-border hover:border-surface-foreground/25"
+      className={`group flex flex-col items-start gap-3 rounded-3xl p-3 text-left transition-all duration-300 ease-out ${
+        selected
+          ? "bg-surface shadow-[0_30px_60px_-32px_rgba(27,26,23,0.32)] ring-1 ring-foreground/80"
+          : "bg-surface/70 hover:-translate-y-0.5 hover:bg-surface hover:shadow-[0_24px_48px_-30px_rgba(27,26,23,0.22)]"
       }`}
     >
-      <div className="relative h-28 w-full overflow-hidden rounded-lg bg-gradient-to-b from-amber-100 to-amber-50">
-        <div
-          className="absolute inset-0"
-          style={{ backgroundColor: swatch.overlayColor, opacity: swatch.overlayOpacity }}
-        />
+      <div className="relative h-32 w-full overflow-hidden rounded-2xl bg-gradient-to-b from-[#efe7d8] to-[#e6dcc8] sm:h-36">
+        <div className="absolute inset-0" style={{ backgroundColor: swatch.overlayColor, opacity: swatch.overlayOpacity }} />
         <div
           className="absolute inset-0"
           style={{
             backgroundImage: `repeating-linear-gradient(${stripeDirection}, rgba(0,0,0,${swatch.lineOpacity}) 0 2px, transparent 2px ${swatch.spacingPx}px)`,
           }}
         />
+        {selected ? (
+          <div className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-foreground text-background">
+            <CheckIcon />
+          </div>
+        ) : null}
       </div>
 
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2">
-          <span className="font-display text-lg">{copy.label}</span>
-          {selected ? (
-            <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-foreground">
-              Geselecteerd
-            </span>
-          ) : null}
-        </div>
-        <p className="text-sm text-muted">{copy.tagline}</p>
+      <div className="space-y-0.5 px-1 pb-1">
+        <p className="text-[15px] font-medium tracking-tight">{copy.label}</p>
+        <p className="text-[13px] text-muted">{copy.tagline}</p>
       </div>
-
-      <ul className="space-y-1 text-xs text-muted">
-        {copy.bullets.map((bullet) => (
-          <li key={bullet} className="flex items-start gap-1.5">
-            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
-            {bullet}
-          </li>
-        ))}
-      </ul>
     </button>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+      <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

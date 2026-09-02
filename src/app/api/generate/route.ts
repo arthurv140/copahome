@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   const rate = checkRateLimit(`generate:${getClientKey(request)}`, 20, 10 * 60 * 1000);
   if (!rate.allowed) {
     return NextResponse.json(
-      { error: "Te veel aanvragen. Probeer het over enkele minuten opnieuw." },
+      { error: "Too many requests. Please try again in a few minutes." },
       { status: 429, headers: rate.retryAfterSeconds ? { "Retry-After": String(rate.retryAfterSeconds) } : {} },
     );
   }
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Ongeldige aanvraag." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
   const {
     mimeType: rawMime,
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   }
 
   if (!isRoomAnalysis(rawAnalysis)) {
-    return NextResponse.json({ error: "Ontbrekende of ongeldige analysegegevens. Upload de foto opnieuw." }, { status: 400 });
+    return NextResponse.json({ error: "Missing or invalid analysis data. Please upload the photo again." }, { status: 400 });
   }
 
   try {
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     console.error("[/api/generate]", err);
     trackEvent({ type: "visualization_failed", treatmentType, reason: "provider_error" });
     return NextResponse.json(
-      { error: "Er ging iets mis bij het genereren van de visualisatie. Probeer het opnieuw." },
+      { error: "Something went wrong while generating the visualisation. Please try again." },
       { status: 502 },
     );
   }

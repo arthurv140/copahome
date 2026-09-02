@@ -6,17 +6,17 @@ import { checkRateLimit, getClientKey } from "@/lib/rateLimit";
 import { ValidationError, validateImagePayload } from "@/lib/validation";
 
 const NO_WINDOW_TIPS = [
-  "Maak de foto recht tegenover het raam.",
-  "Zorg dat het volledige raam zichtbaar is.",
-  "Vermijd extreem donkere foto's.",
-  "Zorg dat het raam niet volledig verborgen is achter meubels.",
+  "Take the photo facing the window straight on.",
+  "Make sure the entire window is visible.",
+  "Avoid extremely dark photos.",
+  "Make sure the window isn't fully hidden behind furniture.",
 ];
 
 export async function POST(request: Request) {
   const rate = checkRateLimit(`analyze:${getClientKey(request)}`, 30, 10 * 60 * 1000);
   if (!rate.allowed) {
     return NextResponse.json(
-      { error: "Te veel aanvragen. Probeer het over enkele minuten opnieuw." },
+      { error: "Too many requests. Please try again in a few minutes." },
       { status: 429, headers: rate.retryAfterSeconds ? { "Retry-After": String(rate.retryAfterSeconds) } : {} },
     );
   }
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Ongeldige aanvraag." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
   const { mimeType: rawMime, imageBase64: rawImage } = (body ?? {}) as Record<string, unknown>;
 
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "We konden het raam op deze foto niet goed herkennen. Probeer een foto waarop het raam duidelijk zichtbaar is.",
+            "We couldn't clearly recognise the window in this photo. Please try a photo where the window is clearly visible.",
           tips: NO_WINDOW_TIPS,
         },
         { status: 422 },
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     console.error("[/api/analyze]", err);
     trackEvent({ type: "analysis_failed", reason: "provider_error" });
     return NextResponse.json(
-      { error: "Er ging iets mis bij het analyseren van de foto. Probeer het opnieuw." },
+      { error: "Something went wrong while analysing this photo. Please try again." },
       { status: 502 },
     );
   }
