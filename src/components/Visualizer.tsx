@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { prepareImageForUpload, type PreparedImage } from "@/lib/image-client";
 import type { RoomAnalysis } from "@/lib/ai/types";
 import { getDefaultProduct, TREATMENT_FAMILIES } from "@/lib/treatments";
@@ -57,15 +57,28 @@ export function Visualizer() {
   const [selectedProductByType, setSelectedProductByType] = useState<Partial<Record<TreatmentTypeId, string>>>({});
   const canShare = useSyncExternalStore(subscribeNoop, getShareSupportSnapshot, getShareSupportServerSnapshot);
 
+  // Read inside async closures (background prefetch, in particular) so a check never
+  // acts on a stale snapshot of `results` from whenever that closure was created.
+  const resultsRef = useRef(results);
+  useEffect(() => {
+    resultsRef.current = results;
+  }, [results]);
+
   function getActiveProductId(type: TreatmentTypeId): string {
     return selectedProductByType[type] ?? getDefaultProduct(type).id;
   }
 
-  /** Kicks off generation for a type/state combo only if it hasn't been generated (or isn't already in flight). */
-  function ensureGenerated(type: TreatmentTypeId, state: TreatmentState) {
-    const status = results[type]?.[state]?.status ?? "idle";
+  /**
+   * Starts generation for a type/state combo in the background if — and only
+   * if — it hasn't been generated yet and isn't already in flight. Does not
+   * touch which tab/state is on screen, so it's safe to call speculatively
+   * (on hover, or right after a neighbouring combo finishes) without
+   * yanking the customer's view around.
+   */
+  function ensureGenerated(type: TreatmentTypeId, state: TreatmentState, productIdOverride?: string) {
+    const status = resultsRef.current[type]?.[state]?.status ?? "idle";
     if (status === "idle") {
-      generateFor(type, state);
+      runGeneration(type, state, productIdOverride);
     }
   }
 
@@ -89,7 +102,7 @@ export function Visualizer() {
     // Switching fabric/colour should feel instant, not require an extra click — regenerate
     // the view the customer is currently looking at right away, with the new choice.
     if (type === activeTab) {
-      generateFor(type, activeState, productId);
+      runGeneration(type, activeState, productId);
     }
   }
 
@@ -144,7 +157,8 @@ export function Visualizer() {
     }
   }
 
-  async function generateFor(treatmentType: TreatmentTypeId, state: TreatmentState, productIdOverride?: string) {
+  /** Pure background fetch + cache update — no navigation side effects, so it's safe for prefetching. */
+  async function runGeneration(treatmentType: TreatmentTypeId, state: TreatmentState, productIdOverride?: string) {
     if (!photo || !analysis) return;
     const productId = productIdOverride ?? getActiveProductId(treatmentType);
 
@@ -152,9 +166,6 @@ export function Visualizer() {
       ...prev,
       [treatmentType]: { ...prev[treatmentType], [state]: { status: "loading" } },
     }));
-    setFlowState("result");
-    setActiveTab(treatmentType);
-    setActiveState(state);
 
     try {
       const res = await fetch("/api/generate", {
@@ -193,6 +204,12 @@ export function Visualizer() {
           [state]: { status: "done", imageDataUrl: dataUrl, providerNotes: data.providerNotes },
         },
       }));
+
+      // The open/closed position the customer didn't just look at is the single most likely
+      // next click — start it quietly in the background so flipping the toggle after this
+      // feels instant instead of waiting on a fresh AI generation.
+      const otherState: TreatmentState = state === "closed" ? "open" : "closed";
+      ensureGenerated(treatmentType, otherState, productId);
     } catch {
       setResults((prev) => ({
         ...prev,
@@ -202,6 +219,20 @@ export function Visualizer() {
         },
       }));
     }
+  }
+
+  /**
+   * User-facing trigger for an explicit click (the initial "Generate
+   * visualisation" button, or a retry after an error): switches the view to
+   * this combo and always (re)runs generation, regardless of any cached
+   * status — unlike `ensureGenerated`, which is for passive/speculative
+   * triggers and must never override an error or in-flight/cached result.
+   */
+  function generateFor(treatmentType: TreatmentTypeId, state: TreatmentState, productIdOverride?: string) {
+    setFlowState("result");
+    setActiveTab(treatmentType);
+    setActiveState(state);
+    runGeneration(treatmentType, state, productIdOverride);
   }
 
   function handleReset() {
