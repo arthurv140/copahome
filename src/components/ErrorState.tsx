@@ -28,7 +28,7 @@ export function ErrorState({ message, tips, onRetry, retryLabel = "Probeer opnie
       <button
         type="button"
         onClick={onRetry}
-        className="mt-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-colors hover:bg-accent"
+        className="mt-2 rounded-full bg-foreground px-6 py-2.5 text-xs font-medium uppercase tracking-[0.2em] text-background transition-colors hover:bg-accent"
       >
         {retryLabel}
       </button>

@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import { Fraunces, Geist } from "next/font/google";
+import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const jost = Jost({
+  variable: "--font-jost",
   subsets: ["latin"],
+  weight: ["300", "400", "500"],
 });
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
-  axes: ["opsz"],
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -21,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="nl" className={`${geistSans.variable} ${fraunces.variable} h-full antialiased`}>
+    <html lang="nl" className={`${jost.variable} ${cormorant.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">{children}</body>
     </html>
   );

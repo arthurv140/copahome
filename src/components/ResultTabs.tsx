@@ -205,7 +205,7 @@ function TreatmentResultPanel({
             <button
               type="button"
               onClick={() => onShare(entry.imageDataUrl!, `copahome-${fileSlug}.png`)}
-              className="rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent"
+              className="rounded-full border border-border px-4 py-2 text-xs font-medium uppercase tracking-[0.15em] transition-colors hover:border-accent hover:text-accent"
             >
               Delen
             </button>
@@ -225,7 +225,7 @@ function TreatmentResultPanel({
       <button
         type="button"
         onClick={() => onGenerate(treatmentType, state)}
-        className="rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-colors hover:bg-accent"
+        className="rounded-full bg-foreground px-6 py-2.5 text-xs font-medium uppercase tracking-[0.2em] text-background transition-colors hover:bg-accent"
       >
         Genereer visualisatie
       </button>

@@ -2,13 +2,13 @@
 
 :root {
   color-scheme: light;
-  --background: #faf8f5;
-  --surface: #ffffff;
-  --foreground: #1c1b19;
-  --muted: #726c64;
-  --border: #e4ddd2;
-  --accent: #a9633b;
-  --accent-foreground: #ffffff;
+  --background: #f7f3ec;
+  --surface: #fefdfb;
+  --foreground: #1c1815;
+  --muted: #8a8172;
+  --border: #e7e0d3;
+  --accent: #8c7a5f;
+  --accent-foreground: #fefdfb;
 }
 
 @theme inline {
@@ -19,8 +19,8 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-jost);
+  --font-display: var(--font-cormorant);
 }
 
 html {

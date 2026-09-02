@@ -249,7 +249,7 @@ export function Visualizer() {
             type="button"
             disabled={!selectedType}
             onClick={() => selectedType && generateFor(selectedType, "closed")}
-            className="w-full rounded-full bg-foreground px-6 py-3.5 text-sm font-medium text-background transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+            className="w-full rounded-full bg-foreground px-7 py-3.5 text-xs font-medium uppercase tracking-[0.2em] text-background transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
           >
             Genereer visualisatie
           </button>

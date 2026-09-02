@@ -15,14 +15,14 @@ export function CTASection() {
       <a
         href="#"
         onClick={() => trackEvent({ type: "cta_clicked", cta: "collection" })}
-        className="w-full rounded-full bg-foreground px-6 py-3 text-center text-sm font-medium text-background transition-colors hover:bg-accent sm:w-auto"
+        className="w-full rounded-full bg-foreground px-7 py-3 text-center text-xs font-medium uppercase tracking-[0.2em] text-background transition-colors hover:bg-accent sm:w-auto"
       >
         Ontdek onze collectie
       </a>
       <a
         href="#"
         onClick={() => trackEvent({ type: "cta_clicked", cta: "advice" })}
-        className="w-full rounded-full border border-border px-6 py-3 text-center text-sm font-medium text-foreground transition-colors hover:border-accent hover:text-accent sm:w-auto"
+        className="w-full rounded-full border border-border px-7 py-3 text-center text-xs font-medium uppercase tracking-[0.2em] text-foreground transition-colors hover:border-accent hover:text-accent sm:w-auto"
       >
         Vraag advies
       </a>
