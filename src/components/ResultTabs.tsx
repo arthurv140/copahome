@@ -216,7 +216,7 @@ function TreatmentResultPanel({
   }
 
   return (
-    <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-surface px-6 py-12 text-center sm:min-h-[360px]">
+    <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-surface px-6 py-12 text-center text-surface-foreground sm:min-h-[360px]">
       <p className="font-display text-lg">
         {copy.label}
         {productName ? ` — ${productName}` : ""} — {STATE_LABEL[state]}
@@ -225,7 +225,7 @@ function TreatmentResultPanel({
       <button
         type="button"
         onClick={() => onGenerate(treatmentType, state)}
-        className="rounded-full bg-foreground px-6 py-2.5 text-xs font-medium uppercase tracking-[0.2em] text-background transition-colors hover:bg-accent"
+        className="rounded-full bg-surface-foreground px-6 py-2.5 text-xs font-medium uppercase tracking-[0.2em] text-surface transition-colors hover:bg-accent hover:text-accent-foreground"
       >
         Genereer visualisatie
       </button>

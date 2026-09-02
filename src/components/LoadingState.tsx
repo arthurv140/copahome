@@ -28,7 +28,7 @@ export function LoadingState({ messages }: LoadingStateProps) {
   const message = messages[index % messages.length] ?? messages[0];
 
   return (
-    <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-5 rounded-2xl border border-border bg-surface px-6 py-12 text-center sm:min-h-[360px]">
+    <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-5 rounded-2xl border border-border bg-surface px-6 py-12 text-center text-surface-foreground sm:min-h-[360px]">
       <div className="flex gap-1.5">
         {[0, 1, 2].map((dot) => (
           <span

@@ -29,8 +29,8 @@ export function TreatmentTypeCard({ copy, selected, onSelect }: TreatmentTypeCar
       type="button"
       onClick={() => onSelect(copy.id)}
       aria-pressed={selected}
-      className={`flex flex-col items-start gap-4 rounded-2xl border p-5 text-left transition-all ${
-        selected ? "border-accent bg-accent/[0.04] shadow-sm" : "border-border bg-surface hover:border-foreground/25"
+      className={`flex flex-col items-start gap-4 rounded-2xl border bg-surface p-5 text-left text-surface-foreground transition-all ${
+        selected ? "border-accent shadow-sm ring-1 ring-accent/25" : "border-border hover:border-surface-foreground/25"
       }`}
     >
       <div className="relative h-28 w-full overflow-hidden rounded-lg bg-gradient-to-b from-amber-100 to-amber-50">

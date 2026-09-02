@@ -45,11 +45,11 @@ export function UploadDropzone({ onFileSelected, disabled }: UploadDropzoneProps
           setIsDragging(false);
           if (!disabled) handleFiles(e.dataTransfer.files);
         }}
-        className={`flex min-h-[280px] w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border border-dashed px-6 py-12 text-center transition-colors sm:min-h-[360px] ${
+        className={`flex min-h-[280px] w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border border-dashed px-6 py-12 text-center text-surface-foreground transition-colors sm:min-h-[360px] ${
           isDragging ? "border-accent bg-accent/5" : "border-border bg-surface hover:border-accent/60"
         } ${disabled ? "pointer-events-none opacity-50" : ""}`}
       >
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground/5">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-foreground/5">
           <UploadIcon />
         </div>
         <div className="space-y-1.5">
