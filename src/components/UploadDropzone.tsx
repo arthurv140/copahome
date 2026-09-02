@@ -71,7 +71,6 @@ export function UploadDropzone({ onFileSelected, disabled }: UploadDropzoneProps
         ref={inputRef}
         type="file"
         accept={ACCEPTED_TYPES.join(",")}
-        capture="environment"
         className="sr-only"
         onChange={(e) => handleFiles(e.target.files)}
         disabled={disabled}
