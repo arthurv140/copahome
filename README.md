@@ -195,29 +195,44 @@ currently requires a paid provider.
 - Client-side image downscaling (`src/lib/image-client.ts`) both speeds up mobile
   uploads and reduces per-generation provider cost.
 
-## 7. Roadmap (Phase 2, architected for but not built)
+## 7. Product catalog & roadmap
 
-The `Product` model (`src/types/product.ts`) already has `collection`, `fabric`,
-`color`, `texture`, `pattern`, `metadata`, and a `family`/`category` split — the MVP's
-six treatment "types" (3 curtain fabrics × transparency, 3 wooden blind slat widths)
-are just six seeded `Product` rows (`src/lib/treatments.ts`), each rendered in both an
-open and a closed state. Adding a second product family (curtains → wooden blinds) and
-a second dimension (open/closed) after the fact, without touching the pipeline or the
-provider interface, was itself a test of this extensibility — Phase 2 continues in the
+The `Product` model (`src/types/product.ts`) has `collection`, `fabric`, `color`,
+`texture`, `pattern`, `metadata`, and a `family`/`category` split. `PRODUCTS` in
+`src/lib/treatments.ts` is a real (if small) catalog — multiple products can share a
+`category` (e.g. **Elite** and **Bologna** are both real Copahome fabric samples under
+`semi_transparent`), and the UI lets the customer pick a specific fabric within a
+category via `getProductsForType()`, defaulting to the first one when there's only one.
+`getProductById()` in `src/lib/validation.ts` resolves the client's chosen product id
+against this server-side catalog before it ever reaches the AI prompt — the client
+never sends fabric details directly, only an id, so a request can't inject arbitrary
+"fabric" text into the prompt.
+
+Every treatment (curtain fabric or blind width) is also rendered in both an open and
+closed state. Adding a second product family (curtains → wooden blinds), a second
+dimension (open/closed), a fourth curtain category (`dim_out`, added once a real
+dim-out sample — **Benares** — existed to model it on), and a real multi-product
+catalog, all after the initial build and without touching the pipeline or the provider
+interface, was itself a running test of this extensibility. Phase 2 continues in the
 same direction:
 
-1. Replace the static cards per family with a real collection browser (fabric/slat →
-   color → structure), each still resolving to a `Product` that flows into the existing
+1. Replace the CSS-rendered swatches with real photographed fabric/slat images per
+   `Product` (the `image` field already exists on the model) once samples are
+   photographed — swatch cards and the fabric picker chips both already render from
+   `Product` data, so this is an asset addition, not a UI rewrite.
+2. Extend the collection browser (currently: category → fabric chip) with color and
+   structure as further dimensions once more than one color per fabric exists, each
+   still resolving to a `Product` that flows into the existing
    `generateVisualization({ product, ... })` parameter — already wired, currently only
    used to override the default fabric/material name and color in the prompt.
-2. Swap the semantic-mask approach for a true pixel mask (segmentation model, e.g. SAM,
+3. Swap the semantic-mask approach for a true pixel mask (segmentation model, e.g. SAM,
    feeding a dedicated inpainting model) if cluttered-room occlusion accuracy needs to
    improve beyond what prompting achieves.
-3. Add "Bekijk deze stof" / "Prijs aanvragen" / "Vraag staal aan" CTAs once specific
+4. Add "Bekijk deze stof" / "Prijs aanvragen" / "Vraag staal aan" CTAs once specific
    SKUs are selectable, per the brief's sales-tool end state (§23).
-4. Swap `MockProvider`'s in-memory rate limiter for Redis/Upstash when running more
+5. Swap `MockProvider`'s in-memory rate limiter for Redis/Upstash when running more
    than one instance.
-5. Optional persistence layer (short-lived signed URLs, auto-expiring storage) if a
+6. Optional persistence layer (short-lived signed URLs, auto-expiring storage) if a
    "email me this visualization" feature is wanted — the pipeline already separates
    original/generated/metadata cleanly enough to add this without a rewrite.
 

@@ -15,6 +15,7 @@ export type TreatmentFamily = "curtain" | "wooden_blind";
 export type TreatmentTypeId =
   | "transparent"
   | "semi_transparent"
+  | "dim_out"
   | "blackout"
   | "wooden_blind_35mm"
   | "wooden_blind_50mm"

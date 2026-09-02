@@ -7,6 +7,7 @@ const SWATCH: Record<
 > = {
   transparent: { overlayOpacity: 0.12, overlayColor: "#ffffff", lineOpacity: 0.06, pattern: "vertical", spacingPx: 18 },
   semi_transparent: { overlayOpacity: 0.55, overlayColor: "#cbb79a", lineOpacity: 0.12, pattern: "vertical", spacingPx: 18 },
+  dim_out: { overlayOpacity: 0.78, overlayColor: "#5c5d4a", lineOpacity: 0.18, pattern: "vertical", spacingPx: 18 },
   blackout: { overlayOpacity: 0.94, overlayColor: "#2a2724", lineOpacity: 0.22, pattern: "vertical", spacingPx: 18 },
   wooden_blind_35mm: { overlayOpacity: 0.88, overlayColor: "#ab7a4c", lineOpacity: 0.4, pattern: "horizontal", spacingPx: 8 },
   wooden_blind_50mm: { overlayOpacity: 0.88, overlayColor: "#9c6a3f", lineOpacity: 0.4, pattern: "horizontal", spacingPx: 12 },

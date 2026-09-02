@@ -1,4 +1,4 @@
-import { TREATMENT_COPY, TREATMENT_FAMILIES } from "@/lib/treatments";
+import { getProductsForType, TREATMENT_COPY, TREATMENT_FAMILIES } from "@/lib/treatments";
 import type { TreatmentState, TreatmentTypeId } from "@/types/product";
 import type { ActiveTab, ResultsMap } from "@/types/visualizer";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
@@ -15,6 +15,8 @@ interface ResultTabsProps {
   onTabChange: (tab: ActiveTab) => void;
   activeState: TreatmentState;
   onStateChange: (state: TreatmentState) => void;
+  selectedProductId: string;
+  onProductChange: (productId: string) => void;
   results: ResultsMap;
   onGenerate: (type: TreatmentTypeId, state: TreatmentState) => void;
   onDownload: (dataUrl: string, filename: string) => void;
@@ -28,12 +30,16 @@ export function ResultTabs({
   onTabChange,
   activeState,
   onStateChange,
+  selectedProductId,
+  onProductChange,
   results,
   onGenerate,
   onDownload,
   onShare,
   canShare,
 }: ResultTabsProps) {
+  const productsForActiveTab = activeTab !== "original" ? getProductsForType(activeTab) : [];
+
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-wrap gap-2">
@@ -48,6 +54,26 @@ export function ResultTabs({
           />
         ))}
       </div>
+
+      {productsForActiveTab.length > 1 ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm text-muted">Stof:</span>
+          <div className="inline-flex flex-wrap gap-1 rounded-full border border-border p-1">
+            {productsForActiveTab.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onProductChange(p.id)}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  selectedProductId === p.id ? "bg-foreground text-background" : "text-foreground/70 hover:text-foreground"
+                }`}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {activeTab !== "original" ? (
         <div className="flex items-center gap-3">
@@ -80,6 +106,7 @@ export function ResultTabs({
         <TreatmentResultPanel
           treatmentType={activeTab}
           state={activeState}
+          productName={productsForActiveTab.find((p) => p.id === selectedProductId)?.name}
           entry={results[activeTab]?.[activeState]}
           originalDataUrl={originalDataUrl}
           onGenerate={onGenerate}
@@ -121,6 +148,7 @@ function TabButton({
 function TreatmentResultPanel({
   treatmentType,
   state,
+  productName,
   entry,
   originalDataUrl,
   onGenerate,
@@ -130,6 +158,7 @@ function TreatmentResultPanel({
 }: {
   treatmentType: TreatmentTypeId;
   state: TreatmentState;
+  productName?: string;
   entry: ResultsMap[TreatmentTypeId][TreatmentState] | undefined;
   originalDataUrl: string;
   onGenerate: (type: TreatmentTypeId, state: TreatmentState) => void;
@@ -139,6 +168,7 @@ function TreatmentResultPanel({
 }) {
   const status = entry?.status ?? "idle";
   const copy = TREATMENT_COPY[treatmentType];
+  const fileSlug = `${treatmentType}${productName ? `-${productName.toLowerCase()}` : ""}-${state}`;
 
   if (status === "loading") {
     return <LoadingState messages={GENERATE_MESSAGES} />;
@@ -166,7 +196,7 @@ function TreatmentResultPanel({
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => onDownload(entry.imageDataUrl!, `copahome-${treatmentType}-${state}.png`)}
+            onClick={() => onDownload(entry.imageDataUrl!, `copahome-${fileSlug}.png`)}
             className="rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent"
           >
             Download visualisatie
@@ -174,7 +204,7 @@ function TreatmentResultPanel({
           {canShare && onShare ? (
             <button
               type="button"
-              onClick={() => onShare(entry.imageDataUrl!, `copahome-${treatmentType}-${state}.png`)}
+              onClick={() => onShare(entry.imageDataUrl!, `copahome-${fileSlug}.png`)}
               className="rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent"
             >
               Delen
@@ -188,7 +218,8 @@ function TreatmentResultPanel({
   return (
     <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-surface px-6 py-12 text-center sm:min-h-[360px]">
       <p className="font-display text-lg">
-        {copy.label} — {STATE_LABEL[state]}
+        {copy.label}
+        {productName ? ` — ${productName}` : ""} — {STATE_LABEL[state]}
       </p>
       <p className="max-w-sm text-sm text-muted">{copy.description}</p>
       <button

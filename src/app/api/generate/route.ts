@@ -3,7 +3,14 @@ import { trackEvent } from "@/lib/analytics";
 import { getAIProvider } from "@/lib/ai/provider";
 import type { RoomAnalysis } from "@/lib/ai/types";
 import { checkRateLimit, getClientKey } from "@/lib/rateLimit";
-import { ValidationError, validateImagePayload, validateTreatmentState, validateTreatmentType } from "@/lib/validation";
+import { getDefaultProduct } from "@/lib/treatments";
+import {
+  ValidationError,
+  validateImagePayload,
+  validateProductId,
+  validateTreatmentState,
+  validateTreatmentType,
+} from "@/lib/validation";
 
 function isRoomAnalysis(value: unknown): value is RoomAnalysis {
   if (!value || typeof value !== "object") return false;
@@ -31,6 +38,7 @@ export async function POST(request: Request) {
     imageBase64: rawImage,
     treatmentType: rawTreatmentType,
     state: rawState,
+    productId: rawProductId,
     analysis: rawAnalysis,
   } = (body ?? {}) as Record<string, unknown>;
 
@@ -38,10 +46,12 @@ export async function POST(request: Request) {
   let imageBase64: string;
   let treatmentType;
   let state;
+  let product;
   try {
     ({ mimeType, imageBase64 } = validateImagePayload(rawMime, rawImage));
     treatmentType = validateTreatmentType(rawTreatmentType);
     state = validateTreatmentState(rawState);
+    product = validateProductId(rawProductId, treatmentType) ?? getDefaultProduct(treatmentType);
   } catch (err) {
     if (err instanceof ValidationError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
@@ -61,6 +71,7 @@ export async function POST(request: Request) {
       analysis: rawAnalysis,
       treatmentType,
       state,
+      product,
     });
     trackEvent({ type: "visualization_generated", treatmentType });
     return NextResponse.json({

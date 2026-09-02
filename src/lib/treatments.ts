@@ -1,15 +1,50 @@
 import type { Product, TreatmentFamily, TreatmentState, TreatmentTypeId } from "@/types/product";
 
 /**
- * Every selectable window treatment, modeled as a Product (see
- * src/types/product.ts) so a real Copahome collection (more fabrics, more
- * slat widths, more colors) is additive later — new rows here plus new
- * TreatmentTypeId values — rather than a rewrite of the AI pipeline or UI,
- * both of which are keyed off TreatmentTypeId rather than hardcoded to
- * curtains.
+ * The product catalog: every purchasable fabric/slat option, modeled as a
+ * Product (see src/types/product.ts). This is a real (if small) test of the
+ * catalog this was built for — Benares/Elite/Bologna are actual Copahome
+ * fabric samples, not placeholders. Multiple products can share a
+ * `category` (e.g. Elite and Bologna are both "semi_transparent") — the UI
+ * lets the customer pick a specific fabric within a category, defaulting to
+ * the first one. Adding a new fabric is one more entry here; adding a new
+ * category is one more TreatmentTypeId + an entry in TREATMENT_COPY /
+ * TREATMENT_PHYSICAL_PROPERTIES below.
  */
-export const TREATMENT_PRODUCTS: Record<TreatmentTypeId, Product> = {
-  transparent: {
+export const PRODUCTS: Product[] = [
+  {
+    id: "copahome-elite",
+    name: "Elite",
+    collection: "Copahome",
+    family: "curtain",
+    category: "semi_transparent",
+    transparency: "medium",
+    color: "Zand met glinsterdraad",
+    fabric: "Losgeweven voile met fijne lurex glinsterdraad",
+  },
+  {
+    id: "copahome-bologna",
+    name: "Bologna",
+    collection: "Copahome",
+    family: "curtain",
+    category: "semi_transparent",
+    transparency: "medium",
+    color: "Naturel linnen",
+    fabric: "Losgeweven linnen-look voile",
+  },
+  {
+    id: "copahome-benares",
+    name: "Benares",
+    collection: "Copahome",
+    family: "curtain",
+    category: "dim_out",
+    transparency: "low",
+    color: "Olijf/antraciet mêlee",
+    fabric: "Dicht geweven jacquard chenille",
+  },
+  // Placeholder fabrics for categories with no real sample yet — replace as
+  // physical stalen come in, same way Elite/Bologna/Benares did.
+  {
     id: "copahome-transparant-default",
     name: "Transparant voile",
     collection: "Copahome Essentials",
@@ -19,17 +54,7 @@ export const TREATMENT_PRODUCTS: Record<TreatmentTypeId, Product> = {
     color: "Natuurlijk wit",
     fabric: "Lichte voile",
   },
-  semi_transparent: {
-    id: "copahome-semi-transparant-default",
-    name: "Semi-transparant linnen",
-    collection: "Copahome Essentials",
-    family: "curtain",
-    category: "semi_transparent",
-    transparency: "medium",
-    color: "Zand",
-    fabric: "Linnenmix",
-  },
-  blackout: {
+  {
     id: "copahome-blackout-default",
     name: "Blackout verduisterend",
     collection: "Copahome Essentials",
@@ -39,7 +64,7 @@ export const TREATMENT_PRODUCTS: Record<TreatmentTypeId, Product> = {
     color: "Antraciet",
     fabric: "Verzwaarde verduisteringsstof",
   },
-  wooden_blind_35mm: {
+  {
     id: "copahome-houten-jaloezie-35mm-default",
     name: "Houten jaloezie 35mm",
     collection: "Copahome Essentials",
@@ -49,7 +74,7 @@ export const TREATMENT_PRODUCTS: Record<TreatmentTypeId, Product> = {
     color: "Naturel eiken",
     material: "Massief hout",
   },
-  wooden_blind_50mm: {
+  {
     id: "copahome-houten-jaloezie-50mm-default",
     name: "Houten jaloezie 50mm",
     collection: "Copahome Essentials",
@@ -59,7 +84,7 @@ export const TREATMENT_PRODUCTS: Record<TreatmentTypeId, Product> = {
     color: "Naturel eiken",
     material: "Massief hout",
   },
-  wooden_blind_63mm: {
+  {
     id: "copahome-houten-jaloezie-63mm-default",
     name: "Houten jaloezie 63mm",
     collection: "Copahome Essentials",
@@ -69,7 +94,22 @@ export const TREATMENT_PRODUCTS: Record<TreatmentTypeId, Product> = {
     color: "Naturel eiken",
     material: "Massief hout",
   },
-};
+];
+
+export function getProductsForType(type: TreatmentTypeId): Product[] {
+  return PRODUCTS.filter((p) => p.category === type);
+}
+
+/** The fabric used when the customer hasn't picked a specific one within a category. */
+export function getDefaultProduct(type: TreatmentTypeId): Product {
+  const product = getProductsForType(type)[0];
+  if (!product) throw new Error(`No product configured for treatment type "${type}"`);
+  return product;
+}
+
+export function getProductById(id: string): Product | undefined {
+  return PRODUCTS.find((p) => p.id === id);
+}
 
 export interface TreatmentCopy {
   id: TreatmentTypeId;
@@ -98,6 +138,15 @@ export const TREATMENT_COPY: Record<TreatmentTypeId, TreatmentCopy> = {
     description:
       "Een gebalanceerde keuze: het raam wordt gedeeltelijk afgeschermd terwijl daglicht zacht binnenvalt.",
     bullets: ["Gemiddelde lichtdoorlaatbaarheid", "Duidelijk meer privacy", "Realistische stofstructuur"],
+  },
+  dim_out: {
+    id: "dim_out",
+    family: "curtain",
+    label: "Dim-out",
+    tagline: "Sterk verduisterend, zonder volledig blackout",
+    description:
+      "Dicht geweven stof die het meeste licht en zicht van buitenaf wegneemt, met nog een zachte gloed — een tussenstap tussen semi-transparant en blackout.",
+    bullets: ["Sterk verminderde lichtinval", "Hoge privacy", "Nog een zachte lichtgloed"],
   },
   blackout: {
     id: "blackout",
@@ -139,7 +188,7 @@ export const TREATMENT_COPY: Record<TreatmentTypeId, TreatmentCopy> = {
 
 /** Family groupings + order for the UI selector. */
 export const TREATMENT_FAMILIES: { family: TreatmentFamily; label: string; types: TreatmentTypeId[] }[] = [
-  { family: "curtain", label: "Gordijnen", types: ["transparent", "semi_transparent", "blackout"] },
+  { family: "curtain", label: "Gordijnen", types: ["transparent", "semi_transparent", "dim_out", "blackout"] },
   {
     family: "wooden_blind",
     label: "Houten jaloezieën",
@@ -164,9 +213,15 @@ export const TREATMENT_PHYSICAL_PROPERTIES: Record<TreatmentTypeId, Record<Treat
   },
   semi_transparent: {
     closed:
-      "A mid-weight linen-blend curtain with moderate light transmission, drawn fully closed across the window. The window is partially obscured — outlines of light stay visible but direct view through the fabric is diffused. Realistic woven fabric texture with natural, fuller folds than a sheer voile.",
+      "A mid-weight, loosely-woven curtain with moderate light transmission, drawn fully closed across the window. The window is partially obscured — outlines of light stay visible but direct view through the fabric is diffused. Realistic open weave texture with natural, fuller folds than a sheer voile.",
     open:
-      "A mid-weight linen-blend curtain drawn open and gathered into fuller folds bunched at each side of the window frame, leaving the window and view unobstructed. Realistic woven fabric texture visible in the gathered folds.",
+      "A mid-weight, loosely-woven curtain drawn open and gathered into fuller folds bunched at each side of the window frame, leaving the window and view unobstructed. Realistic open weave texture visible in the gathered folds.",
+  },
+  dim_out: {
+    closed:
+      "A densely-woven dim-out curtain, drawn fully closed across the window. Significantly reduces both light and outside visibility compared to a semi-transparent fabric, but is not a full blackout — a soft, diffused glow still passes through. Mid-to-heavy weight fabric with a tighter, more structured weave and moderate folds, noticeably denser in texture than a sheer or semi-transparent curtain.",
+    open:
+      "A densely-woven dim-out curtain drawn open and gathered into moderate, structured folds bunched at each side of the window frame, leaving the window and view unobstructed. The tighter weave and body of the fabric remain visible in the gathered folds.",
   },
   blackout: {
     closed:

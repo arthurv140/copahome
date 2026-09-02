@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { prepareImageForUpload, type PreparedImage } from "@/lib/image-client";
 import type { RoomAnalysis } from "@/lib/ai/types";
-import { TREATMENT_FAMILIES } from "@/lib/treatments";
+import { getDefaultProduct, TREATMENT_FAMILIES } from "@/lib/treatments";
 import type { TreatmentState, TreatmentTypeId } from "@/types/product";
 import type { ActiveTab, ResultsMap } from "@/types/visualizer";
 import { ErrorState } from "./ErrorState";
@@ -50,7 +50,21 @@ export function Visualizer() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("original");
   const [activeState, setActiveState] = useState<TreatmentState>("closed");
   const [results, setResults] = useState<ResultsMap>(buildEmptyResults);
+  const [selectedProductByType, setSelectedProductByType] = useState<Partial<Record<TreatmentTypeId, string>>>({});
   const canShare = useSyncExternalStore(subscribeNoop, getShareSupportSnapshot, getShareSupportServerSnapshot);
+
+  function getActiveProductId(type: TreatmentTypeId): string {
+    return selectedProductByType[type] ?? getDefaultProduct(type).id;
+  }
+
+  function handleProductChange(type: TreatmentTypeId, productId: string) {
+    setSelectedProductByType((prev) => ({ ...prev, [type]: productId }));
+    // The cached result(s) for this type no longer match the newly chosen fabric.
+    setResults((prev) => ({
+      ...prev,
+      [type]: { closed: { status: "idle" }, open: { status: "idle" } },
+    }));
+  }
 
   async function runAnalysis(image: PreparedImage) {
     setFlowState("analyzing");
@@ -92,6 +106,7 @@ export function Visualizer() {
       setSelectedType(null);
       setActiveTab("original");
       setActiveState("closed");
+      setSelectedProductByType({});
       await runAnalysis(prepared);
     } catch {
       setAnalysisError({
@@ -122,6 +137,7 @@ export function Visualizer() {
           imageBase64: photo.base64,
           treatmentType,
           state,
+          productId: getActiveProductId(treatmentType),
           analysis,
         }),
       });
@@ -169,6 +185,7 @@ export function Visualizer() {
     setActiveTab("original");
     setActiveState("closed");
     setResults(buildEmptyResults());
+    setSelectedProductByType({});
   }
 
   function handleDownload(dataUrl: string, filename: string) {
@@ -246,6 +263,8 @@ export function Visualizer() {
           onTabChange={setActiveTab}
           activeState={activeState}
           onStateChange={setActiveState}
+          selectedProductId={activeTab !== "original" ? getActiveProductId(activeTab) : ""}
+          onProductChange={(productId) => activeTab !== "original" && handleProductChange(activeTab, productId)}
           results={results}
           onGenerate={generateFor}
           onDownload={handleDownload}
