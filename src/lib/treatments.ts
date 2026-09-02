@@ -19,8 +19,9 @@ export const PRODUCTS: Product[] = [
     family: "curtain",
     category: "semi_transparent",
     transparency: "medium",
-    color: "Zand met glinsterdraad",
-    fabric: "Losgeweven voile met fijne lurex glinsterdraad",
+    color: "Warm zandbeige/taupe",
+    fabric:
+      "Grof, onregelmatig losgeweven stof (knit-achtige structuur, geen strak geweven linnen) met duidelijk zichtbare, ongelijke open gaatjes in de weving waar fel licht doorheen schijnt — sommige zones dichter geweven, andere zeer open/doorschijnend. Door de hele stof loopt een fijne, subtiel glinsterende/metallic garenslof (lurex) die oplicht tegen invallend licht. Franjerand aan de onderzijde zichtbaar. Draperie valt zwaar/zwierig, geen strakke plooien maar losse, organische golving.",
   },
   {
     id: "copahome-bologna",
@@ -29,8 +30,9 @@ export const PRODUCTS: Product[] = [
     family: "curtain",
     category: "semi_transparent",
     transparency: "medium",
-    color: "Naturel linnen",
-    fabric: "Losgeweven linnen-look voile",
+    color: "Natuurlijk ecru/gebroken wit",
+    fabric:
+      "Fijn, gelijkmatig en strak geweven linnen-look stof (platbinding, geen knit) — egale, zichtbare kruisdraad-textuur zonder glans of glinsterdraad. Consistente lichtdoorlatendheid over de hele stof (geen ongelijke gaten zoals bij een grovere weving). Zachte, rechte plooival.",
   },
   {
     id: "copahome-benares",
@@ -40,7 +42,8 @@ export const PRODUCTS: Product[] = [
     category: "dim_out",
     transparency: "low",
     color: "Olijf/antraciet mêlee",
-    fabric: "Dicht geweven jacquard chenille",
+    fabric:
+      "Dicht geweven jacquard chenille met een duidelijk zichtbaar geweven patchwork/blokmotief in de stof zelf (geen effen kleur) — volledig ondoorzichtig, geen lichtdoorval of doorkijk mogelijk.",
   },
   // Placeholder fabrics for categories with no real sample yet — replace as
   // physical stalen come in, same way Elite/Bologna/Benares did.
@@ -219,9 +222,9 @@ export const TREATMENT_PHYSICAL_PROPERTIES: Record<TreatmentTypeId, Record<Treat
   },
   dim_out: {
     closed:
-      "A densely-woven dim-out curtain, drawn fully closed across the window. Significantly reduces both light and outside visibility compared to a semi-transparent fabric, but is not a full blackout — a soft, diffused glow still passes through. Mid-to-heavy weight fabric with a tighter, more structured weave and moderate folds, noticeably denser in texture than a sheer or semi-transparent curtain.",
+      "A densely-woven, essentially opaque dim-out curtain, drawn fully closed across the window. Blocks direct view through the fabric almost entirely — treat the exact light transmission and any pattern/texture as specified by the selected fabric's own description below, which takes priority over this general one. Mid-to-heavy weight fabric with a tighter, more structured weave and moderate folds, noticeably denser in texture than a sheer or semi-transparent curtain.",
     open:
-      "A densely-woven dim-out curtain drawn open and gathered into moderate, structured folds bunched at each side of the window frame, leaving the window and view unobstructed. The tighter weave and body of the fabric remain visible in the gathered folds.",
+      "A densely-woven, essentially opaque dim-out curtain drawn open and gathered into moderate, structured folds bunched at each side of the window frame, leaving the window and view unobstructed. The tighter weave, body, and any pattern of the fabric (per the selected fabric's own description below) remain visible in the gathered folds.",
   },
   blackout: {
     closed:

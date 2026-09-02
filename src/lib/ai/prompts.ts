@@ -110,7 +110,7 @@ export function buildEditPrompt(
     .join("\n");
 
   const productLine = product
-    ? `Use this specific product where it does not conflict with the physical description below: ${product.name}, color ${product.color}${product.fabric ? `, fabric ${product.fabric}` : ""}${product.material ? `, material ${product.material}` : ""}.`
+    ? `${product.name} — color: ${product.color}${product.fabric ? `; fabric: ${product.fabric}` : ""}${product.material ? `; material: ${product.material}` : ""}.`
     : "";
 
   return `Edit this exact interior photograph. Do not generate a new room. Do not regenerate anything outside the window/${treatmentNoun} zones described below.
@@ -120,8 +120,10 @@ ROOM CONTEXT: ${analysis.roomDescription} Lighting: ${analysis.lightingNotes} Pe
 TASK: Add or replace a ${treatmentNoun}, in its ${state} position, on the following window(s), and nothing else:
 ${windowLines}
 
-${treatmentNoun.toUpperCase()} TO RENDER: ${physicalDescription}
-${productLine}
+${treatmentNoun.toUpperCase()} TO RENDER${product ? ` — SPECIFIC FABRIC (authoritative — render exactly this, including any pattern, print, weave texture, sheen, or light transmission it describes, even where it differs from the general guidance below)` : ""}:
+${productLine || "(no specific product selected — use the general guidance below)"}
+
+General material guidance for this category (follow only where the specific fabric above doesn't already say otherwise): ${physicalDescription}
 
 STRICT RULES:
 - Preserve, pixel-for-pixel where possible, everything that is not the window treatment zone: furniture, floor, walls, ceiling, decor, lighting, plants, people or pets, architecture, camera angle and perspective must all remain identical to the original photo.
