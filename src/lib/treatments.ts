@@ -45,9 +45,10 @@ export const PRODUCTS: Product[] = [
     family: "curtain",
     category: "dim_out",
     transparency: "low",
-    color: "Olijf/antraciet mêlee",
+    color: "Dark olive / taupe / warm brown melange",
+    // Product-authored AI reference description, same treatment as Elite.
     fabric:
-      "Dicht geweven jacquard chenille met een duidelijk zichtbaar geweven patchwork/blokmotief in de stof zelf (geen effen kleur) — volledig ondoorzichtig, geen lichtdoorval of doorkijk mogelijk.",
+      "BENARES curtain fabric — a premium, richly textured decorative woven fabric with a sophisticated dark olive, taupe and warm brown colour palette. The fabric has a complex, irregular melange effect created by the combination of subtly contrasting yarns. Its surface shows an organic, abstract woven pattern consisting of irregular horizontal and vertical tonal blocks and softly blurred rectangular areas. The pattern is integrated into the weave itself and must never appear printed, geometric or sharply defined. The fabric has a dense, substantial textile construction with a refined coarse micro-texture. Individual yarns are subtly visible, creating depth, dimension and a tactile, natural appearance. The surface is predominantly matte with only a very subtle natural textile reflection. The colour is not uniform: it contains nuanced variations between deep olive-brown, charcoal-taupe, muted khaki and warm beige-brown tones, producing a sophisticated lived-in appearance. BENARES should have a medium-heavy, luxurious drape with soft but structured vertical folds, hanging naturally under gravity with enough body for elegant, full folds rather than appearing thin or flimsy. Light transmission is low to moderate: the fabric provides significant visual filtering and privacy while still allowing a small amount of diffused daylight through; when backlit it may reveal subtle tonal depth within the weave but should remain substantially more opaque than a sheer or semi-transparent curtain. Preserve the characteristic irregular woven melange and tonal block effect across the entire curtain — organic and softly blended, no repetitive digital pattern. Do not make it look like wallpaper, printed fabric, velvet, linen, satin or a smooth solid-colour textile. No gloss, no metallic effect, no sharp geometric graphics, no artificial texture.",
   },
   // Placeholder fabrics for categories with no real sample yet — replace as
   // physical stalen come in, same way Elite/Bologna/Benares did.
